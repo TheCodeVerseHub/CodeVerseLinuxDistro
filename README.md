@@ -72,3 +72,81 @@ Beginner and advanced users are both welcome.
 
 ## Repository Structure (Planned)
 
+```
+
+.
+├── scripts/           # Install and setup scripts
+├── configs/           # Wayland and system configs
+│   ├── hyprland/
+│   └── niri/
+├── packages/          # Package lists and meta packages
+├── docs/              # Documentation
+├── assets/            # Branding and visuals
+└── README.md
+
+```
+
+Structure may evolve as the project grows.
+
+---
+
+## Contribution
+
+This project is open to contributions.
+
+You can help with:
+- Core system scripts
+- Wayland compositor configs
+- Package selection
+- Documentation
+- Testing
+- Design and creative direction
+
+Please read `CONTRIBUTING.md` before starting.
+
+All meaningful contributors will receive the **@Contributors** role on the CodeVerse Hub Discord server.
+
+---
+
+## Getting Started (For Contributors)
+
+1. Fork this repository
+2. Read the documentation
+3. Check open issues
+4. Pick a task or open a discussion
+5. Create a feature branch
+6. Submit a pull request
+
+If you are unsure where to start, look for issues labeled `good first issue`.
+
+---
+
+## Current Status
+
+This project is in **early development**.
+
+Things may change rapidly.  
+Breaking changes are expected at this stage.
+
+---
+
+## License
+
+License will be added soon.  
+Until then, assume all rights are reserved.
+
+---
+
+## Community
+
+This project is part of **CodeVerse Hub**.
+
+- GitHub Organization: https://github.com/TheCodeVerseHub
+- Contributions and discussions happen openly on GitHub
+- Coordination and discussion also happen on the CodeVerse Hub Discord server
+
+---
+
+This distro is built **by the community, for the community**.  
+If you want to learn, build, and collaborate on real Linux internals, you are welcome here.
+```
