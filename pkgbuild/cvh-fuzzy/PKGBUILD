@@ -1,0 +1,45 @@
+# Maintainer: CVH Linux Team
+pkgname=cvh-fuzzy
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Universal fuzzy finder for CVH Linux"
+arch=('x86_64')
+url="https://github.com/codeversehub/cvh-linux"
+license=('GPL3')
+depends=('gcc-libs')
+makedepends=('rust' 'cargo')
+source=()
+
+_cvh_root="/home/ofek/codeversehubv2distro"
+
+build() {
+    cd "$_cvh_root/src/cvh-fuzzy"
+    cargo build --release
+}
+
+package() {
+    cd "$_cvh_root/src/cvh-fuzzy"
+    install -Dm755 "target/release/cvh-fuzzy" "$pkgdir/usr/bin/cvh-fuzzy"
+
+    # Install shell integration
+    install -Dm644 /dev/stdin "$pkgdir/usr/share/cvh-fuzzy/shell/zsh.zsh" <<'ZSHEOF'
+# CVH Fuzzy Zsh Integration
+if command -v cvh-fuzzy &> /dev/null; then
+    cvh-fuzzy-file-widget() {
+        local selected=$(cvh-fuzzy --mode files)
+        LBUFFER="${LBUFFER}${selected}"
+        zle redisplay
+    }
+    zle -N cvh-fuzzy-file-widget
+    bindkey '^T' cvh-fuzzy-file-widget
+
+    cvh-fuzzy-history-widget() {
+        local selected=$(fc -rl 1 | cvh-fuzzy --mode stdin | sed 's/^ *[0-9]* *//')
+        LBUFFER="$selected"
+        zle redisplay
+    }
+    zle -N cvh-fuzzy-history-widget
+    bindkey '^R' cvh-fuzzy-history-widget
+fi
+ZSHEOF
+}

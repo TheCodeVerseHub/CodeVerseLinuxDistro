@@ -1,0 +1,6 @@
+NAME="CVH Linux"
+PRETTY_NAME="CVH Linux"
+ID=cvh
+VERSION_ID=0.1
+HOME_URL="https://codeversehub.dev"
+DOCUMENTATION_URL="https://github.com/codeversehub/cvh-linux"

@@ -1,0 +1,36 @@
+# Maintainer: CVH Linux Team
+pkgname=cvh-branding
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="CVH Linux branding and default configurations"
+arch=('any')
+url="https://github.com/codeversehub/cvh-linux"
+license=('GPL3')
+depends=()
+source=()
+
+package() {
+    # MOTD - welcome message (doesn't conflict with filesystem)
+    install -Dm644 /dev/stdin "$pkgdir/etc/motd" <<'MOTDEOF'
+Welcome to CVH Linux!
+
+Quick Start:
+  - Mod+Return    Open terminal
+  - Mod+D         Application launcher
+  - Mod+1-9       Switch workspaces
+  - Mod+Shift+Q   Close window
+  - Mod+Shift+E   Exit Niri
+
+For more info: https://github.com/codeversehub/cvh-linux
+MOTDEOF
+
+    # CVH Linux info file (custom location, no conflicts)
+    install -Dm644 /dev/stdin "$pkgdir/usr/share/cvh-linux/info" <<'INFOEOF'
+NAME="CVH Linux"
+PRETTY_NAME="CVH Linux"
+ID=cvh
+VERSION_ID=0.1
+HOME_URL="https://codeversehub.dev"
+DOCUMENTATION_URL="https://github.com/codeversehub/cvh-linux"
+INFOEOF
+}

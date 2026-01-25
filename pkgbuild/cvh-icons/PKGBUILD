@@ -1,0 +1,45 @@
+# Maintainer: CVH Linux Team
+pkgname=cvh-icons
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Sandboxed Lua-scriptable desktop icons for CVH Linux"
+arch=('x86_64')
+url="https://github.com/codeversehub/cvh-linux"
+license=('GPL3')
+depends=('gcc-libs' 'wayland' 'bubblewrap' 'lua')
+makedepends=('rust' 'cargo')
+source=()
+
+_cvh_root="/home/ofek/codeversehubv2distro"
+
+build() {
+    cd "$_cvh_root/src/cvh-icons"
+    cargo build --release
+}
+
+package() {
+    cd "$_cvh_root/src/cvh-icons"
+    install -Dm755 "target/release/cvh-icons" "$pkgdir/usr/bin/cvh-icons"
+
+    # Install Lua scripts
+    install -dm755 "$pkgdir/usr/share/cvh-icons/scripts"
+    install -Dm644 lua/widgets/*.lua "$pkgdir/usr/share/cvh-icons/scripts/" 2>/dev/null || true
+
+    # Install default config
+    install -Dm644 /dev/stdin "$pkgdir/etc/cvh-icons/config.toml" <<'CONFEOF'
+# CVH Icons Configuration
+icon_size = 64
+grid_spacing = 20
+font_size = 12.0
+icon_theme = "Adwaita"
+
+[sandbox]
+enabled = true
+allow_network = false
+
+[colors]
+label_fg = "#ffffff"
+label_bg = "#00000080"
+selection = "#88c0d040"
+CONFEOF
+}

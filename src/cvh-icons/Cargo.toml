@@ -1,0 +1,67 @@
+[package]
+name = "cvh-icons"
+version = "0.1.0"
+edition = "2021"
+authors = ["CVH Linux Team"]
+description = "Sandboxed Lua-scriptable file/folder icon system for CVH Linux"
+license = "GPL-3.0"
+repository = "https://github.com/codeversehub/cvh-linux"
+
+[dependencies]
+# Lua runtime
+mlua = { version = "0.10", features = ["lua54", "serialize", "send"] }
+
+# Wayland
+wayland-client = "0.31"
+wayland-protocols = { version = "0.32", features = ["client"] }
+wayland-protocols-wlr = { version = "0.3", features = ["client"] }
+smithay-client-toolkit = "0.19"
+
+# Rendering
+tiny-skia = "0.11"
+fontdue = "0.9"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "ico"] }
+resvg = "0.44"
+
+# Sandboxing
+nix = { version = "0.29", features = ["process", "user", "fs"] }
+
+# Async
+tokio = { version = "1", features = ["full"] }
+
+# Configuration
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
+kdl = "4"
+
+# IPC / D-Bus
+zbus = "5"
+
+# System info
+sysinfo = "0.32"
+
+# CLI
+clap = { version = "4", features = ["derive"] }
+
+# Error handling
+anyhow = "1"
+thiserror = "2"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# File watching
+notify = "7"
+
+# XDG
+xdg = "2.5"
+freedesktop-icons = "0.2"
+mime_guess = "2"
+dirs = "5"
+hostname = "0.4"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true

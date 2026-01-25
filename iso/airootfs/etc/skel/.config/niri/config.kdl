@@ -1,0 +1,186 @@
+// CVH Linux Niri Configuration
+// Minimal, lightweight Wayland compositor setup
+
+// Input configuration
+input {
+    keyboard {
+        xkb {
+            layout "us"
+        }
+        repeat-delay 300
+        repeat-rate 50
+    }
+
+    touchpad {
+        tap
+        dwt
+        natural-scroll
+        accel-speed 0.2
+    }
+
+    mouse {
+        accel-speed 0.0
+    }
+
+    focus-follows-mouse max-scroll-amount="0%"
+}
+
+// Layout configuration
+layout {
+    gaps 8
+
+    center-focused-column "never"
+
+    preset-column-widths {
+        proportion 0.33333
+        proportion 0.5
+        proportion 0.66667
+    }
+
+    default-column-width { proportion 0.5; }
+
+    focus-ring {
+        width 2
+        active-color "#88c0d0"
+        inactive-color "#4c566a"
+    }
+
+    border {
+        off
+    }
+}
+
+// Cursor theme
+cursor {
+    xcursor-theme "Adwaita"
+    xcursor-size 24
+}
+
+// Environment variables for Wayland
+environment {
+    QT_QPA_PLATFORM "wayland"
+    QT_WAYLAND_DISABLE_WINDOWDECORATION "1"
+    SDL_VIDEODRIVER "wayland"
+    GDK_BACKEND "wayland"
+    MOZ_ENABLE_WAYLAND "1"
+    XCURSOR_THEME "Adwaita"
+    XCURSOR_SIZE "24"
+}
+
+// Spawn commands on startup
+spawn-at-startup "cvh-icons"
+spawn-at-startup "mako"
+
+// Screenshot path
+screenshot-path "~/Pictures/Screenshots/screenshot-%Y-%m-%d-%H-%M-%S.png"
+
+// Key bindings
+binds {
+    // Application launchers
+    Mod+Return { spawn "foot"; }
+    Mod+D { spawn "cvh-fuzzy" "--mode" "apps"; }
+    Mod+Shift+D { spawn "cvh-fuzzy" "--mode" "files"; }
+
+    // Window management
+    Mod+Shift+Q { close-window; }
+    Mod+Shift+E { quit; }
+
+    // Window focus (vim-style)
+    Mod+H { focus-column-left; }
+    Mod+J { focus-window-down; }
+    Mod+K { focus-window-up; }
+    Mod+L { focus-column-right; }
+
+    // Window focus (arrow keys)
+    Mod+Left { focus-column-left; }
+    Mod+Down { focus-window-down; }
+    Mod+Up { focus-window-up; }
+    Mod+Right { focus-column-right; }
+
+    // Window movement
+    Mod+Shift+H { move-column-left; }
+    Mod+Shift+J { move-window-down; }
+    Mod+Shift+K { move-window-up; }
+    Mod+Shift+L { move-column-right; }
+
+    Mod+Shift+Left { move-column-left; }
+    Mod+Shift+Down { move-window-down; }
+    Mod+Shift+Up { move-window-up; }
+    Mod+Shift+Right { move-column-right; }
+
+    // Column width
+    Mod+R { switch-preset-column-width; }
+    Mod+F { maximize-column; }
+    Mod+Shift+F { fullscreen-window; }
+
+    // Workspaces
+    Mod+1 { focus-workspace 1; }
+    Mod+2 { focus-workspace 2; }
+    Mod+3 { focus-workspace 3; }
+    Mod+4 { focus-workspace 4; }
+    Mod+5 { focus-workspace 5; }
+    Mod+6 { focus-workspace 6; }
+    Mod+7 { focus-workspace 7; }
+    Mod+8 { focus-workspace 8; }
+    Mod+9 { focus-workspace 9; }
+
+    Mod+Shift+1 { move-column-to-workspace 1; }
+    Mod+Shift+2 { move-column-to-workspace 2; }
+    Mod+Shift+3 { move-column-to-workspace 3; }
+    Mod+Shift+4 { move-column-to-workspace 4; }
+    Mod+Shift+5 { move-column-to-workspace 5; }
+    Mod+Shift+6 { move-column-to-workspace 6; }
+    Mod+Shift+7 { move-column-to-workspace 7; }
+    Mod+Shift+8 { move-column-to-workspace 8; }
+    Mod+Shift+9 { move-column-to-workspace 9; }
+
+    // Screenshots
+    Print { screenshot; }
+    Mod+Print { screenshot-screen; }
+    Mod+Shift+Print { screenshot-window; }
+
+    // Audio controls (WirePlumber)
+    XF86AudioRaiseVolume allow-when-locked=true { spawn "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "5%+"; }
+    XF86AudioLowerVolume allow-when-locked=true { spawn "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "5%-"; }
+    XF86AudioMute allow-when-locked=true { spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SINK@" "toggle"; }
+    XF86AudioMicMute allow-when-locked=true { spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SOURCE@" "toggle"; }
+
+    // Brightness controls
+    XF86MonBrightnessUp { spawn "brightnessctl" "set" "5%+"; }
+    XF86MonBrightnessDown { spawn "brightnessctl" "set" "5%-"; }
+}
+
+// Animations
+animations {
+    slowdown 1.0
+
+    workspace-switch {
+        spring damping-ratio=1.0 stiffness=1000 epsilon=0.0001
+    }
+
+    window-open {
+        duration-ms 150
+        curve "ease-out-expo"
+    }
+
+    window-close {
+        duration-ms 150
+        curve "ease-out-quad"
+    }
+}
+
+// Window rules
+window-rule {
+    match app-id="foot"
+    default-column-width { proportion 0.5; }
+}
+
+window-rule {
+    match app-id="firefox"
+    default-column-width { proportion 0.66667; }
+}
+
+window-rule {
+    match app-id="cvh-fuzzy"
+    open-floating true
+}

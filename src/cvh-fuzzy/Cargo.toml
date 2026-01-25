@@ -1,0 +1,51 @@
+[package]
+name = "cvh-fuzzy"
+version = "0.1.0"
+edition = "2021"
+authors = ["CVH Linux Team"]
+description = "Universal fuzzy finder for CVH Linux - files, apps, and commands"
+license = "GPL-3.0"
+repository = "https://github.com/codeversehub/cvh-linux"
+
+[dependencies]
+# TUI framework
+ratatui = "0.28"
+crossterm = "0.28"
+
+# CLI argument parsing
+clap = { version = "4", features = ["derive"] }
+
+# Fuzzy matching (from helix editor - very fast)
+nucleo = "0.5"
+nucleo-matcher = "0.3"
+
+# File system traversal
+walkdir = "2"
+ignore = "0.4"
+
+# Desktop entry parsing (for app launcher)
+freedesktop-desktop-entry = "0.7"
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# Configuration
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
+dirs = "5"
+
+# Parallel processing
+rayon = "1.10"
+
+# Error handling
+anyhow = "1"
+thiserror = "2"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true

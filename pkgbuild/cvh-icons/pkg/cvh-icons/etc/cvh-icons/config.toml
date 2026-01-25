@@ -1,0 +1,14 @@
+# CVH Icons Configuration
+icon_size = 64
+grid_spacing = 20
+font_size = 12.0
+icon_theme = "Adwaita"
+
+[sandbox]
+enabled = true
+allow_network = false
+
+[colors]
+label_fg = "#ffffff"
+label_bg = "#00000080"
+selection = "#88c0d040"
