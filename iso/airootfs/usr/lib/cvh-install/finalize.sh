@@ -6,23 +6,21 @@
 set_passwords() {
     step_header "Setting Passwords"
 
-    echo -e "  ${BOLD}Set root password:${NC}"
+    gum style --bold "  Set root password:"
     arch-chroot /mnt passwd root
 
     echo
-    echo -e "  ${BOLD}Set password for $USERNAME:${NC}"
+    gum style --bold "  Set password for $USERNAME:"
     arch-chroot /mnt passwd "$USERNAME"
 
-    echo -e "\n  ${GREEN}✓${NC} Passwords set"
+    gum style --foreground 82 "  ✓ Passwords set"
 }
 
 # Finish installation
 finish_installation() {
     step_header "Finishing Installation"
 
-    echo -n "  Syncing filesystems... "
-    sync
-    echo -e "${GREEN}done${NC}"
+    gum spin --spinner dot --title "Syncing filesystems..." -- sync
 
     unmount_all
 
@@ -30,23 +28,25 @@ finish_installation() {
 
     show_completion
 
-    echo -e "  ${BOLD}System Details:${NC}"
-    echo -e "    Username:  ${CYAN}$USERNAME${NC}"
-    echo -e "    Hostname:  ${CYAN}$HOSTNAME${NC}"
-    echo -e "    Timezone:  ${CYAN}$TIMEZONE${NC}"
-    echo -e "    Boot Mode: ${CYAN}$BOOT_MODE${NC}"
+    # System details box
+    gum style --border rounded --padding "1 2" --margin "1 0" \
+        "$(gum style --bold 'System Details')" \
+        "Username:  $USERNAME" \
+        "Hostname:  $HOSTNAME" \
+        "Timezone:  $TIMEZONE" \
+        "Boot Mode: $BOOT_MODE"
+
+    # After reboot instructions
+    gum style --border rounded --padding "1 2" --margin "1 0" \
+        "$(gum style --bold 'After Reboot')" \
+        "1. Ly display manager will appear on boot" \
+        "2. Select $COMPOSITOR session" \
+        "3. Enter your username and password" \
+        "4. Press Mod+Return to open terminal" \
+        "5. Press Mod+D to open app launcher (cvh-fuzzy)"
+
+    gum style --faint "CVH Tools: cvh-fuzzy (launcher), cvh-icons (desktop icons)"
     echo
 
-    echo -e "  ${BOLD}After Reboot:${NC}"
-    echo -e "    1. ${GREEN}Ly display manager${NC} will appear on boot"
-    echo -e "    2. Select ${CYAN}$COMPOSITOR${NC} session"
-    echo -e "    3. Enter your username and password"
-    echo -e "    4. Press ${CYAN}Mod+Return${NC} to open terminal"
-    echo -e "    5. Press ${CYAN}Mod+D${NC} to open app launcher (cvh-fuzzy)"
-    echo
-    echo -e "  ${DIM}CVH Tools: cvh-fuzzy (launcher), cvh-icons (desktop icons)${NC}"
-    echo
-
-    read -r -p "  Press Enter to reboot..." _ || true
-    reboot
+    gum confirm "Ready to reboot?" --affirmative "Reboot Now" --negative "Cancel" && reboot
 }

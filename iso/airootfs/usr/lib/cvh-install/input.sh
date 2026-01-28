@@ -6,29 +6,25 @@
 select_keyboard() {
     step_header "Keyboard Layout"
 
-    echo "  Available layouts:"
-    echo -e "    ${BOLD}1)${NC} us - US English ${DIM}[default]${NC}"
-    echo -e "    ${BOLD}2)${NC} uk - UK English"
-    echo -e "    ${BOLD}3)${NC} de - German"
-    echo -e "    ${BOLD}4)${NC} fr - French"
-    echo -e "    ${BOLD}5)${NC} es - Spanish"
-    echo -e "    ${BOLD}6)${NC} il - Hebrew"
-    echo -e "    ${BOLD}7)${NC} Other"
-    echo
+    local kb_options=(
+        "us - US English"
+        "uk - UK English"
+        "de - German"
+        "fr - French"
+        "es - Spanish"
+        "il - Hebrew"
+        "Other"
+    )
 
-    read -r -p "  Select layout [1]: " kb_choice
-    kb_choice=${kb_choice:-1}
+    local selection
+    selection=$(gum choose --header "Select keyboard layout" --cursor.foreground="6" "${kb_options[@]}")
 
-    case $kb_choice in
-        1) KEYMAP="us" ;;
-        2) KEYMAP="uk" ;;
-        3) KEYMAP="de" ;;
-        4) KEYMAP="fr" ;;
-        5) KEYMAP="es" ;;
-        6) KEYMAP="il" ;;
-        7) read -r -p "  Enter keymap name: " KEYMAP ;;
-        *) KEYMAP="us" ;;
-    esac
+    if [[ "$selection" == "Other" ]]; then
+        KEYMAP=$(gum input --placeholder "Enter keymap name (e.g., br, it, ru)")
+        [[ -z "$KEYMAP" ]] && KEYMAP="us"
+    else
+        KEYMAP="${selection%% *}"
+    fi
 
     loadkeys "$KEYMAP" 2>/dev/null || true
     echo -e "\n  ${GREEN}✓${NC} Keyboard: ${BOLD}$KEYMAP${NC}"
@@ -37,31 +33,7 @@ select_keyboard() {
 # Select timezone
 select_timezone() {
     step_header "Timezone"
-
-    echo "  Common timezones:"
-    echo -e "    ${BOLD}1)${NC} Asia/Jerusalem ${DIM}[default]${NC}"
-    echo -e "    ${BOLD}2)${NC} UTC"
-    echo -e "    ${BOLD}3)${NC} America/New_York"
-    echo -e "    ${BOLD}4)${NC} America/Los_Angeles"
-    echo -e "    ${BOLD}5)${NC} Europe/London"
-    echo -e "    ${BOLD}6)${NC} Europe/Berlin"
-    echo -e "    ${BOLD}7)${NC} Other"
-    echo
-
-    read -r -p "  Select timezone [1]: " tz_choice
-    tz_choice=${tz_choice:-1}
-
-    case $tz_choice in
-        1) TIMEZONE="Asia/Jerusalem" ;;
-        2) TIMEZONE="UTC" ;;
-        3) TIMEZONE="America/New_York" ;;
-        4) TIMEZONE="America/Los_Angeles" ;;
-        5) TIMEZONE="Europe/London" ;;
-        6) TIMEZONE="Europe/Berlin" ;;
-        7) read -r -p "  Enter timezone (Region/City): " TIMEZONE ;;
-        *) TIMEZONE="Asia/Jerusalem" ;;
-    esac
-
+    TIMEZONE=$(timedatectl list-timezones | gum filter --height 20 --header "Select a timezone") || exit 1
     echo -e "\n  ${GREEN}✓${NC} Timezone: ${BOLD}$TIMEZONE${NC}"
 }
 
@@ -69,19 +41,15 @@ select_timezone() {
 select_compositor() {
     step_header "Compositor Selection"
 
-    echo "  Available Wayland compositors:"
-    echo -e "    ${BOLD}1)${NC} Niri - Scrollable-tiling compositor ${DIM}[default]${NC}"
-    echo -e "    ${BOLD}2)${NC} Hyprland - Dynamic tiling compositor"
-    echo
+    local comp_options=(
+        "niri - Scrollable-tiling compositor"
+        "hyprland - Dynamic tiling compositor"
+    )
 
-    read -r -p "  Select compositor [1]: " comp_choice
-    comp_choice=${comp_choice:-1}
+    local selection
+    selection=$(gum choose --header "Select Wayland compositor" --cursor.foreground="6" "${comp_options[@]}")
 
-    case $comp_choice in
-        1) COMPOSITOR="niri" ;;
-        2) COMPOSITOR="hyprland" ;;
-        *) COMPOSITOR="niri" ;;
-    esac
+    COMPOSITOR="${selection%% *}"
 
     echo -e "\n  ${GREEN}✓${NC} Compositor: ${BOLD}$COMPOSITOR${NC}"
 }
@@ -90,43 +58,32 @@ select_compositor() {
 select_disk() {
     step_header "Disk Selection"
 
-    echo "  Available disks:"
-    echo
-
-    # Filter and display disks with nice formatting
-    local i=1
+    # Build disk options array
+    local disk_options=()
     while IFS= read -r line; do
         local name=$(echo "$line" | awk '{print $1}')
         local size=$(echo "$line" | awk '{print $2}')
         local model=$(echo "$line" | awk '{$1=$2=""; print $0}' | xargs)
-        printf "    ${BOLD}%d)${NC} /dev/%-8s ${CYAN}%8s${NC}  %s\n" "$i" "$name" "$size" "$model"
-        ((i++))
+        disk_options+=("/dev/$name ($size) $model")
     done < <(list_disks)
-    echo
 
-    # Get list of disks
-    local disks=($(get_disk_names))
-
-    if [[ ${#disks[@]} -eq 0 ]]; then
+    if [[ ${#disk_options[@]} -eq 0 ]]; then
         log_error "No suitable disks found!"
         exit 1
     fi
 
-    read -r -p "  Enter disk number: " disk_num
+    local selection
+    selection=$(gum choose --header "Select installation disk" --cursor.foreground="6" "${disk_options[@]}")
 
-    if [[ ! "$disk_num" =~ ^[0-9]+$ ]] || [[ $disk_num -lt 1 ]] || [[ $disk_num -gt ${#disks[@]} ]]; then
-        log_error "Invalid selection!"
-        exit 1
-    fi
-
-    DISK="/dev/${disks[$((disk_num-1))]}"
+    # Extract disk path from selection
+    DISK=$(echo "$selection" | awk '{print $1}')
 
     echo
-    echo -e "  ${YELLOW}⚠${NC}  Selected: ${BOLD}$DISK${NC}"
-    echo -e "  ${RED}    ALL DATA WILL BE DESTROYED!${NC}"
+    gum style --foreground 208 --bold "⚠  Selected: $DISK"
+    gum style --foreground 196 "   ALL DATA WILL BE DESTROYED!"
     echo
-    read -r -p "  Type 'yes' to confirm: " confirm
-    if [[ "$confirm" != "yes" ]]; then
+
+    if ! gum confirm "Are you sure you want to format $DISK?"; then
         log_error "Installation cancelled"
         exit 1
     fi
@@ -138,8 +95,8 @@ select_disk() {
 set_hostname() {
     step_header "System Configuration"
 
-    read -r -p "  Enter hostname [cvh-linux]: " input_hostname
-    HOSTNAME=${input_hostname:-cvh-linux}
+    HOSTNAME=$(gum input --placeholder "cvh-linux" --header "Enter hostname" --value "cvh-linux")
+    HOSTNAME=${HOSTNAME:-cvh-linux}
 
     if [[ ! "$HOSTNAME" =~ ^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$ ]]; then
         log_warn "Invalid hostname, using: cvh-linux"
@@ -152,8 +109,9 @@ set_hostname() {
 # Create user account configuration
 create_user_config() {
     echo
-    read -r -p "  Enter username [cvh]: " input_username
-    USERNAME=${input_username:-cvh}
+
+    USERNAME=$(gum input --placeholder "cvh" --header "Enter username" --value "cvh")
+    USERNAME=${USERNAME:-cvh}
 
     if [[ ! "$USERNAME" =~ ^[a-z_][a-z0-9_-]*$ ]]; then
         log_warn "Invalid username, using: cvh"
