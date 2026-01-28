@@ -30,25 +30,23 @@ configure_system() {
 
     # Verify script was created
     if [[ ! -f /mnt/root/configure.sh ]]; then
-        echo -e "\n  ${RED}✗${NC} Failed to create configuration script!"
+        gum style --foreground 196 "  ✗ Failed to create configuration script!"
         exit 1
     fi
 
     # Run configuration with progress
     for ((i=0; i<total; i++)); do
-        progress_bar $((i+1)) $total "  Configuring"
-        printf " ${DIM}%s${NC}" "${tasks[$i]}"
-        sleep 0.5
+        gum spin --spinner dot --title "${tasks[$i]}..." -- sleep 0.5
     done
 
-    echo -e "\n\n  ${BLUE}●${NC} Running system configuration..."
+    gum style --foreground 6 "  ● Running system configuration..."
     arch-chroot /mnt /bin/bash /root/configure.sh
     rm -f /mnt/root/configure.sh
 
     # Install GRUB bootloader
     install_grub
 
-    echo -e "\n  ${GREEN}✓${NC} System configured"
+    gum style --foreground 82 "  ✓ System configured"
 }
 
 # Write the chroot configuration script
@@ -219,7 +217,7 @@ binds {
     Mod+8 { focus-workspace 8; }
     Mod+9 { focus-workspace 9; }
 
-    Print { spawn "sh" "-c" "grim -g \\"\$(slurp)\\" ~/Pictures/screenshot-\$(date +%Y%m%d-%H%M%S).png"; }
+    Print { spawn "sh" "-c" "grim -g \\\"\$(slurp)\\\" ~/Pictures/screenshot-\$(date +%Y%m%d-%H%M%S).png"; }
 }
 NIRI_EOF
     chown -R $USERNAME:$USERNAME /home/$USERNAME/.config/niri
@@ -550,13 +548,13 @@ CONFIGURE_SCRIPT
 
 # Install GRUB bootloader
 install_grub() {
-    echo -e "\n\n  ${BLUE}●${NC} Installing GRUB bootloader..."
+    gum style --foreground 6 "  ● Installing GRUB bootloader..."
     if [[ "$BOOT_MODE" == "uefi" ]]; then
         arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=CVH
     else
         arch-chroot /mnt grub-install --target=i386-pc "$DISK"
     fi
 
-    echo -e "  ${BLUE}●${NC} Generating GRUB config..."
+    gum style --foreground 6 "  ● Generating GRUB config..."
     arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
 }
