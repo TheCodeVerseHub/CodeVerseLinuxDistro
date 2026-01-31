@@ -523,6 +523,7 @@ dependencies = [
  "serde",
  "smithay-client-toolkit",
  "sysinfo",
+ "tempfile",
  "thiserror 2.0.18",
  "tiny-skia",
  "tokio",
