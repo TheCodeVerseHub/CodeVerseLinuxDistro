@@ -10,9 +10,8 @@ use std::process::Command;
 
 mod bubblewrap;
 
-pub use bubblewrap::BubblewrapSandbox;
-
 /// Sandbox configuration for icon scripts
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct SandboxOptions {
     /// Allow network access
@@ -48,7 +47,7 @@ impl Default for SandboxOptions {
 }
 
 /// Check if bubblewrap is available
-pub fn is_bubblewrap_available() -> bool {
+pub fn _is_bubblewrap_available() -> bool {
     Command::new("bwrap")
         .arg("--version")
         .output()
@@ -57,7 +56,7 @@ pub fn is_bubblewrap_available() -> bool {
 }
 
 /// Validate sandbox configuration
-pub fn validate_config(options: &SandboxOptions) -> Result<()> {
+pub fn _validate_config(options: &SandboxOptions) -> Result<()> {
     // Check that all specified paths exist
     for path in &options.read_only_paths {
         if !path.exists() {

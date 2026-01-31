@@ -7,7 +7,6 @@ use notify::{Event, RecommendedWatcher, RecursiveMode, Watcher};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc;
-use tokio::sync::mpsc as async_mpsc;
 use tracing::{debug, error, info, warn};
 
 use crate::config::Config;
@@ -189,6 +188,7 @@ impl IconDaemon {
     }
 
     /// Get the number of active icons
+    #[allow(dead_code)]
     pub fn icon_count(&self) -> usize {
         self.icons.len()
     }

@@ -3,112 +3,133 @@
 //! Provides a sandboxed Lua environment for icon customization.
 
 use anyhow::{Context, Result};
-use mlua::{Function, Lua, Table, Value};
+use mlua::{Error as LuaError, Function, Lua, Table, Value};
 use std::path::Path;
 
 pub mod api;
 mod stdlib;
 
-pub use api::{Canvas, DrawCommand};
+pub use api::DrawCommand;
 
-/// Sandboxed Lua runtime for icon scripts
+/// sandboxed lua runtime for icon scripts
 pub struct LuaRuntime {
     lua: Lua,
 }
 
+#[allow(dead_code)]
 impl LuaRuntime {
-    /// Create a new sandboxed Lua runtime
+    /// create a new sandbox lua runtime
     pub fn new() -> Result<Self> {
         let lua = Lua::new();
 
-        // Sandbox the environment
         Self::sandbox(&lua)?;
-
-        // Install safe standard library
         stdlib::install(&lua)?;
-
-        // Install icon API
         api::install(&lua)?;
 
         Ok(Self { lua })
     }
 
-    /// Remove dangerous globals from Lua environment
+    /// remove bugged globals from env
     fn sandbox(lua: &Lua) -> Result<()> {
         let globals = lua.globals();
 
-        // Remove dangerous functions
-        let dangerous = [
-            "os",           // OS access
-            "io",           // File I/O
-            "loadfile",     // Load files
-            "dofile",       // Execute files
-            "debug",        // Debug library
-            "package",      // Package system (allows require)
-            "load",         // Load arbitrary code
-            "loadstring",   // Load strings as code (Lua 5.1)
-            "rawget",       // Bypass metatables
-            "rawset",       // Bypass metatables
-            "rawequal",     // Bypass metatables
-            "collectgarbage", // GC control
-            "newproxy",     // Create userdata
+        // do NOT remove this; totally conservative.
+        let dng = [
+            "os",             // os access
+            "io",             // file I/O
+            "loadfile",       // load fs
+            "dofile",         // exec fs
+            "debug",          // debug lib
+            "package",        // pkg sys
+            "load",           // load arbitrary code
+            "loadstring",     // loads strs as code
+            "rawget",         // bypass mets
+            "rawset",         // bypass mets
+            "rawequal",       // bypass mets
+            "collectgarbage", // gc control
+            "newproxy",       // create usrdata
         ];
 
-        for name in dangerous {
+        for name in dng {
             globals.set(name, Value::Nil)?;
         }
 
-        // Restrict string library to safe functions only
-        Self::restrict_string_library(lua)?;
+        Self::restrict_strlib(lua)?;
 
         Ok(())
     }
 
-    /// Restrict string library to safe subset
-    fn restrict_string_library(lua: &Lua) -> Result<()> {
-        // String functions are generally safe, but we limit them
-        // to prevent potential DoS via regex complexity
+    /// restrict str library to safe subset
+    ///
+    /// we keep a small set of harmless string helpers and provide a guarded `gsub`
+    /// we deliberately avoid exposing `gmatch` (iterator) to prevent uncontrolled iteration
+    /// or complex pattern based DoS vectors. ff iterator support is required, implement a
+    /// controlled wrapper that enforces iteration caps and timeouts
+    fn restrict_strlib(lua: &Lua) -> Result<()> {
         let globals = lua.globals();
-        let string: Table = globals.get("string")?;
+        let string: Table = globals.get("string")
+            .context("expected global `string` table in Lua state")?;
 
-        // Keep safe functions
+        // keep safe, do NOT remove
         let safe_funcs = [
             "byte", "char", "find", "format", "len",
             "lower", "upper", "rep", "reverse", "sub",
         ];
 
-        let new_string = lua.create_table()?;
+        let new_str = lua.create_table()?;
         for func_name in safe_funcs {
             if let Ok(func) = string.get::<Function>(func_name) {
-                new_string.set(func_name, func)?;
+                new_str.set(func_name, func)?;
             }
         }
 
-        // Add limited gsub and gmatch (with iteration limits)
-        if let Ok(func) = string.get::<Function>("gsub") {
-            new_string.set("gsub", func)?;
-        }
-        if let Ok(func) = string.get::<Function>("gmatch") {
-            new_string.set("gmatch", func)?;
-        }
-        if let Ok(func) = string.get::<Function>("match") {
-            new_string.set("match", func)?;
+        // guarded gstub, for editing contact me (hachimamma) otherwise do NOT edit
+        const MAX_STRING_LEN: usize = 10_000;   // tunable
+        const MAX_PATTERN_LEN: usize = 1_000;   // tunable
+
+        if let Ok(orig_gsub) = string.get::<Function>("gsub") {
+            let orig = orig_gsub.clone();
+            let safe_gsub = lua.create_function(move |_lua, (s, pat, repl): (String, String, Value)| {
+                if s.len() > MAX_STRING_LEN {
+                    return Err(LuaError::RuntimeError("input string too large".into()));
+                }
+                if pat.len() > MAX_PATTERN_LEN {
+                    return Err(LuaError::RuntimeError("pattern too large".into()));
+                }
+                orig.call::<Value>((s, pat, repl))
+            })?;
+            new_str.set("gsub", safe_gsub)?;
         }
 
-        globals.set("string", new_string)?;
+        if let Ok(orig_match) = string.get::<Function>("match") {
+            let orig = orig_match.clone();
+            let safe_match = lua.create_function(move |_lua, (s, pat): (String, String)| {
+                if s.len() > MAX_STRING_LEN {
+                    return Err(LuaError::RuntimeError("input string too large".into()));
+                }
+                if pat.len() > MAX_PATTERN_LEN {
+                    return Err(LuaError::RuntimeError("pattern too large".into()));
+                }
+                orig.call::<Value>((s, pat))
+            })?;
+            new_str.set("match", safe_match)?;
+        }
+
+        globals.set("string", new_str)?;
 
         Ok(())
     }
 
-    /// Load and execute an icon script
+    /// load and exec an icon script
     pub fn load_script(&self, path: &Path) -> Result<IconScript> {
         let content = std::fs::read_to_string(path)
             .with_context(|| format!("Failed to read script: {}", path.display()))?;
 
-        self.lua.load(&content).exec()
+        self.lua
+            .load(&content)
+            .exec()
             .with_context(|| format!("Failed to execute script: {}", path.display()))?;
 
-        // Get the Icon table
         let globals = self.lua.globals();
         let icon_table: Table = globals.get("Icon")
             .context("Script must define an 'Icon' table")?;
@@ -116,35 +137,39 @@ impl LuaRuntime {
         Ok(IconScript { icon_table })
     }
 
-    /// Execute a Lua string (for testing/REPL)
+    /// execute a lua string for repl/testing
     pub fn exec(&self, code: &str) -> Result<()> {
         self.lua.load(code).exec()?;
         Ok(())
     }
 
-    /// Get a reference to the Lua state
+    /// get a reference to lua state
     pub fn lua(&self) -> &Lua {
         &self.lua
     }
 }
 
-/// Represents a loaded icon script
+/// represents a loaded icon script
+#[allow(dead_code)]
 pub struct IconScript {
     icon_table: Table,
 }
 
+#[allow(dead_code)]
 impl IconScript {
-    /// Get a property from the Icon table
+    /// get a property from icon table
     pub fn get<T: mlua::FromLua>(&self, key: &str) -> Result<T> {
-        self.icon_table.get(key).context(format!("Missing property: {}", key))
+        self.icon_table
+            .get(key)
+            .with_context(|| format!("Missing property: {}", key))
     }
 
-    /// Get an optional property
+    /// get an optional property
     pub fn get_opt<T: mlua::FromLua>(&self, key: &str) -> Option<T> {
         self.icon_table.get(key).ok()
     }
 
-    /// Call the init method if it exists
+    /// call the init method (iff exists)
     pub fn call_init(&self) -> Result<()> {
         if let Ok(init_fn) = self.icon_table.get::<Function>("init") {
             init_fn.call::<()>(())?;
@@ -152,7 +177,11 @@ impl IconScript {
         Ok(())
     }
 
-    /// Call the render method
+    /// call the render method
+    ///
+    /// NOTE: we pass the icon table itself to the render function by convention
+    /// if you intend to expose the canvas object to Lua directly, implement
+    /// a ToLua conversion for canvas and pass it here instead
     pub fn call_render(&self, _canvas: &api::Canvas) -> Result<()> {
         if let Ok(render_fn) = self.icon_table.get::<Function>("render") {
             render_fn.call::<()>(self.icon_table.clone())?;
@@ -160,16 +189,18 @@ impl IconScript {
         Ok(())
     }
 
-    /// Call the on_click handler
-    pub fn call_on_click(&self, button: u32, x: f64, y: f64) -> Result<()> {
+    /// call the on_click handler
+    pub fn co_click(&self, button: u32, x: f64, y: f64) -> Result<()> {
         if let Ok(handler) = self.icon_table.get::<Function>("on_click") {
             handler.call::<()>((button, x, y))?;
         }
         Ok(())
     }
 
-    /// Call the on_drop handler for drag-and-drop
-    pub fn call_on_drop(&self, lua: &Lua, paths: Vec<String>) -> Result<()> {
+    /// call the on_drop handler
+    ///
+    /// `lua` is required here for construction of a lua table for the paths
+    pub fn co_drop(&self, lua: &Lua, paths: Vec<String>) -> Result<()> {
         if let Ok(handler) = self.icon_table.get::<Function>("on_drop") {
             let paths_table = lua.create_table()?;
             for (i, path) in paths.iter().enumerate() {

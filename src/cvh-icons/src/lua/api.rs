@@ -3,7 +3,7 @@
 //! Provides safe functions for icon scripts to interact with the system.
 
 use anyhow::Result;
-use mlua::{Function, Lua, Table, UserData, UserDataMethods};
+use mlua::{Lua, UserData, UserDataMethods};
 
 /// Canvas for drawing icons
 #[derive(Clone)]
@@ -14,6 +14,7 @@ pub struct Canvas {
     pub commands: Vec<DrawCommand>,
 }
 
+#[allow(dead_code)]
 #[derive(Clone, Debug)]
 pub enum DrawCommand {
     FillRect { x: f32, y: f32, w: f32, h: f32, color: String },
@@ -26,6 +27,7 @@ pub enum DrawCommand {
     Clear { color: String },
 }
 
+#[allow(dead_code)]
 impl Canvas {
     pub fn new(width: u32, height: u32) -> Self {
         Self {
@@ -90,6 +92,7 @@ impl UserData for Canvas {
     }
 }
 
+#[allow(dead_code)]
 /// Install the CVH API into Lua globals
 pub fn install(lua: &Lua) -> Result<()> {
     let globals = lua.globals();

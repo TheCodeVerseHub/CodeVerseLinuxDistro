@@ -12,6 +12,7 @@ use crate::icons::DesktopIcon;
 use crate::lua::DrawCommand;
 
 /// Icon renderer
+#[allow(dead_code)]
 pub struct IconRenderer {
     /// Icon size
     size: u32,
@@ -25,6 +26,7 @@ pub struct IconRenderer {
     selection_color: Color,
 }
 
+#[allow(dead_code)]
 impl IconRenderer {
     pub fn new(size: u32, font_size: f32) -> Self {
         Self {
@@ -141,7 +143,7 @@ impl IconRenderer {
     fn draw_label(&self, pixmap: &mut Pixmap, name: &str) -> Result<()> {
         // Truncate name if too long
         let max_chars = 12;
-        let display_name = if name.len() > max_chars {
+        let _display_name = if name.len() > max_chars {
             format!("{}...", &name[..max_chars - 3])
         } else {
             name.to_string()

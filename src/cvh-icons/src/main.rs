@@ -5,7 +5,7 @@
 
 use anyhow::Result;
 use clap::Parser;
-use tracing::{info, warn, error};
+use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod config;

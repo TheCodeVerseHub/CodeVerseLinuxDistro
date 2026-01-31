@@ -9,10 +9,12 @@ use std::process::{Child, Command, Stdio};
 use super::SandboxOptions;
 
 /// Bubblewrap sandbox wrapper
+#[allow(dead_code)]
 pub struct BubblewrapSandbox {
     options: SandboxOptions,
 }
 
+#[allow(dead_code)]
 impl BubblewrapSandbox {
     /// Create a new bubblewrap sandbox
     pub fn new(options: SandboxOptions) -> Self {

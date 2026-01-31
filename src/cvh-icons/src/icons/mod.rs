@@ -9,6 +9,7 @@ use crate::config::Config;
 use crate::lua::LuaRuntime;
 
 /// Represents a desktop icon
+#[allow(dead_code)]
 pub struct DesktopIcon {
     /// Path to the file/folder
     path: PathBuf,
@@ -33,6 +34,7 @@ pub struct DesktopIcon {
     size: u32,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum IconType {
     File,
@@ -47,6 +49,7 @@ pub enum IconType {
     Unknown,
 }
 
+#[allow(dead_code)]
 impl DesktopIcon {
     /// Create a new desktop icon
     pub fn new(path: &Path, config: &Config) -> Result<Self> {
@@ -215,6 +218,7 @@ impl DesktopIcon {
 }
 
 /// Action to take after a click
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ClickAction {
     None,

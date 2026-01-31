@@ -7,10 +7,12 @@ use anyhow::Result;
 // Placeholder module - full implementation would use smithay-client-toolkit
 
 /// Wayland display connection
+#[allow(dead_code)]
 pub struct WaylandConnection {
     // In production: wayland_client::Connection
 }
 
+#[allow(dead_code)]
 impl WaylandConnection {
     /// Connect to Wayland display
     pub fn connect() -> Result<Self> {
@@ -25,7 +27,8 @@ impl WaylandConnection {
     }
 }
 
-/// Layer shell surface for an icon
+/// Layer shell surface for an icon(
+#[allow(dead_code)]
 pub struct IconSurface {
     x: i32,
     y: i32,
@@ -33,6 +36,7 @@ pub struct IconSurface {
     height: u32,
 }
 
+#[allow(dead_code)]
 impl IconSurface {
     /// Create a new icon surface
     pub fn new(x: i32, y: i32, width: u32, height: u32) -> Result<Self> {
@@ -58,11 +62,13 @@ impl IconSurface {
 }
 
 /// Desktop icon manager for Wayland
+#[allow(dead_code)]
 pub struct DesktopIconManager {
     _connection: WaylandConnection,
     surfaces: Vec<IconSurface>,
 }
 
+#[allow(dead_code)]
 impl DesktopIconManager {
     /// Create new desktop icon manager
     pub fn new() -> Result<Self> {
