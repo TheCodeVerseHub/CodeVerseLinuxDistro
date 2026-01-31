@@ -11,6 +11,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 mod config;
 mod daemon;
 mod icons;
+mod ipc;
 mod lua;
 mod renderer;
 mod sandbox;
@@ -44,8 +45,7 @@ struct Args {
     list_scripts: bool,
 }
 
-#[tokio::main]
-async fn main() -> Result<()> {
+fn main() -> Result<()> {
     let args = Args::parse();
 
     // Initialize logging
@@ -83,10 +83,10 @@ async fn main() -> Result<()> {
     info!("Desktop directory: {}", desktop_dir.display());
 
     // Initialize the daemon
-    let mut daemon = daemon::IconDaemon::new(config, desktop_dir).await?;
+    let mut daemon = daemon::IconDaemon::new(config, desktop_dir)?;
 
-    // Run the main loop
-    daemon.run().await?;
+    // Run the main loop (uses calloop event loop)
+    daemon.run()?;
 
     Ok(())
 }

@@ -15,7 +15,7 @@ mlua = { version = "0.10", features = ["lua54", "serialize", "send"] }
 wayland-client = "0.31"
 wayland-protocols = { version = "0.32", features = ["client"] }
 wayland-protocols-wlr = { version = "0.3", features = ["client"] }
-smithay-client-toolkit = "0.19"
+smithay-client-toolkit = "0.20"
 
 # Rendering
 tiny-skia = "0.11"
@@ -26,8 +26,8 @@ resvg = "0.44"
 # Sandboxing
 nix = { version = "0.29", features = ["process", "user", "fs"] }
 
-# Async
-tokio = { version = "1", features = ["full"] }
+# Event loop
+calloop = "0.14"
 
 # Configuration
 serde = { version = "1", features = ["derive"] }
@@ -36,6 +36,7 @@ kdl = "4"
 
 # IPC / D-Bus
 zbus = "5"
+bincode = "1"
 
 # System info
 sysinfo = "0.32"

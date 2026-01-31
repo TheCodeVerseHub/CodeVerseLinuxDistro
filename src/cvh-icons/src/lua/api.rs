@@ -4,6 +4,7 @@
 
 use anyhow::Result;
 use mlua::{Lua, UserData, UserDataMethods};
+use serde::{Deserialize, Serialize};
 
 /// Canvas for drawing icons
 #[derive(Clone)]
@@ -15,7 +16,7 @@ pub struct Canvas {
 }
 
 #[allow(dead_code)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum DrawCommand {
     FillRect { x: f32, y: f32, w: f32, h: f32, color: String },
     StrokeRect { x: f32, y: f32, w: f32, h: f32, color: String, width: f32 },

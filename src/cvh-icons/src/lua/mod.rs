@@ -7,9 +7,12 @@ use mlua::{Error as LuaError, Function, Lua, Table, Value};
 use std::path::Path;
 
 pub mod api;
+pub mod process;
 mod stdlib;
 
 pub use api::DrawCommand;
+#[allow(unused_imports)]
+pub use process::LuaProcess;
 
 /// sandboxed lua runtime for icon scripts
 pub struct LuaRuntime {
