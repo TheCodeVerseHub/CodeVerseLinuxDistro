@@ -118,4 +118,34 @@ function Icon:on_hover(entered)
     self.hovered = entered
 end
 
+function Icon:on_drop(items)
+    -- Files can accept drops (e.g., for associations or operations)
+    for i, item in ipairs(items) do
+        print("Dropped " .. item .. " onto file " .. self.path)
+    end
+    return "drop_received"
+end
+
+-- Calculate icon position on screen
+-- input: { screen_width, screen_height, icon_count, icon_index, cell_width, cell_height }
+-- returns: { x, y }
+function Icon:get_position(input)
+    local cell_w = input.cell_width or 96
+    local cell_h = input.cell_height or 96
+    local margin = 20
+
+    -- Calculate number of columns that fit on screen
+    local cols = math.floor((input.screen_width - margin * 2) / cell_w)
+    if cols < 1 then cols = 1 end
+
+    -- Calculate row and column for this icon
+    local col = input.icon_index % cols
+    local row = math.floor(input.icon_index / cols)
+
+    return {
+        x = margin + col * cell_w,
+        y = margin + row * cell_h
+    }
+end
+
 return Icon

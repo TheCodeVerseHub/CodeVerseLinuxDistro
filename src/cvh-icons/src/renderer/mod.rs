@@ -3,13 +3,66 @@
 //! Uses tiny-skia for software rendering to Wayland surfaces.
 
 use anyhow::Result;
+use fontdue::{Font, FontSettings};
 use tiny_skia::{
-    Color, FillRule, LineCap, LineJoin, Paint, PathBuilder, Pixmap, Rect, Stroke,
+    Color, FillRule, LineCap, LineJoin, Paint, Pixmap, PixmapPaint, PathBuilder, Rect, Stroke,
     Transform,
 };
+use tracing::warn;
 
 use crate::icons::DesktopIcon;
 use crate::lua::DrawCommand;
+
+/// Text alignment options
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TextAlign {
+    Left,
+    Center,
+    Right,
+}
+
+impl TextAlign {
+    /// Parse alignment from string (case-insensitive)
+    pub fn from_str(s: &str) -> Self {
+        match s.to_lowercase().as_str() {
+            "center" => TextAlign::Center,
+            "right" => TextAlign::Right,
+            _ => TextAlign::Left,
+        }
+    }
+}
+
+/// Common system font paths to search for DejaVu Sans
+const FONT_SEARCH_PATHS: &[&str] = &[
+    "/usr/share/fonts/TTF/DejaVuSans.ttf",
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+    "/usr/share/fonts/dejavu/DejaVuSans.ttf",
+    "/usr/share/fonts/dejavu-sans-fonts/DejaVuSans.ttf",
+    "/usr/share/fonts/truetype/DejaVuSans.ttf",
+    "/usr/share/fonts/liberation/LiberationSans-Regular.ttf",
+    "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+    "/usr/share/fonts/noto/NotoSans-Regular.ttf",
+    "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",
+];
+
+/// Try to load a default font from common system paths
+fn load_default_font() -> Option<Font> {
+    for path in FONT_SEARCH_PATHS {
+        if let Ok(font_data) = std::fs::read(path) {
+            match Font::from_bytes(font_data, FontSettings::default()) {
+                Ok(font) => {
+                    tracing::debug!("Loaded font from: {}", path);
+                    return Some(font);
+                }
+                Err(e) => {
+                    tracing::trace!("Failed to parse font {}: {}", path, e);
+                }
+            }
+        }
+    }
+    warn!("No system font found, text rendering will be disabled");
+    None
+}
 
 /// Icon renderer
 #[allow(dead_code)]
@@ -17,8 +70,11 @@ pub struct IconRenderer {
     /// Icon size
     size: u32,
 
-    /// Font for labels (would use fontdue in production)
+    /// Font for labels
     font_size: f32,
+
+    /// Loaded font for text rendering (None if loading failed)
+    font: Option<Font>,
 
     /// Colors
     label_fg: Color,
@@ -32,9 +88,124 @@ impl IconRenderer {
         Self {
             size,
             font_size,
+            font: load_default_font(),
             label_fg: Color::WHITE,
             label_bg: Color::from_rgba8(0, 0, 0, 128),
             selection_color: Color::from_rgba8(136, 192, 208, 64),
+        }
+    }
+
+    /// Create a renderer with a specific font (useful for testing)
+    pub fn with_font(size: u32, font_size: f32, font: Option<Font>) -> Self {
+        Self {
+            size,
+            font_size,
+            font,
+            label_fg: Color::WHITE,
+            label_bg: Color::from_rgba8(0, 0, 0, 128),
+            selection_color: Color::from_rgba8(136, 192, 208, 64),
+        }
+    }
+
+    /// Render text to a pixmap
+    ///
+    /// # Arguments
+    /// * `pixmap` - Target pixmap to draw on
+    /// * `text` - Text string to render
+    /// * `x` - X position (meaning depends on alignment)
+    /// * `y` - Y position (baseline)
+    /// * `size` - Font size in pixels
+    /// * `color` - Text color as tiny-skia Color
+    /// * `align` - Text alignment (left, center, right)
+    pub fn render_text(
+        &self,
+        pixmap: &mut Pixmap,
+        text: &str,
+        x: f32,
+        y: f32,
+        size: f32,
+        color: Color,
+        align: TextAlign,
+    ) {
+        let font = match &self.font {
+            Some(f) => f,
+            None => return, // No font loaded, skip text rendering
+        };
+
+        if text.is_empty() {
+            return;
+        }
+
+        // Calculate total text width for alignment
+        let mut total_width = 0.0f32;
+        let mut glyph_data: Vec<(fontdue::Metrics, Vec<u8>)> = Vec::new();
+
+        for ch in text.chars() {
+            let (metrics, bitmap) = font.rasterize(ch, size);
+            total_width += metrics.advance_width;
+            glyph_data.push((metrics, bitmap));
+        }
+
+        // Calculate starting x position based on alignment
+        let start_x = match align {
+            TextAlign::Left => x,
+            TextAlign::Center => x - total_width / 2.0,
+            TextAlign::Right => x - total_width,
+        };
+
+        // Extract color components (premultiplied alpha)
+        let r = (color.red() * 255.0) as u8;
+        let g = (color.green() * 255.0) as u8;
+        let b = (color.blue() * 255.0) as u8;
+        let base_alpha = color.alpha();
+
+        let mut cursor_x = start_x;
+
+        for (metrics, bitmap) in glyph_data {
+            if bitmap.is_empty() {
+                cursor_x += metrics.advance_width;
+                continue;
+            }
+
+            // Calculate glyph position
+            // y is baseline, ymin is typically negative for glyphs above baseline
+            let glyph_x = cursor_x + metrics.xmin as f32;
+            let glyph_y = y + metrics.ymin as f32;
+
+            // Create a small pixmap for the glyph
+            if metrics.width > 0 && metrics.height > 0 {
+                if let Some(mut glyph_pixmap) = Pixmap::new(metrics.width as u32, metrics.height as u32) {
+                    // Fill glyph pixmap with colored text
+                    let pixels = glyph_pixmap.pixels_mut();
+                    for (i, coverage) in bitmap.iter().enumerate() {
+                        if *coverage > 0 {
+                            let alpha = (*coverage as f32 / 255.0) * base_alpha;
+                            // tiny-skia uses premultiplied alpha
+                            let pm_r = (r as f32 * alpha) as u8;
+                            let pm_g = (g as f32 * alpha) as u8;
+                            let pm_b = (b as f32 * alpha) as u8;
+                            let pm_a = (alpha * 255.0) as u8;
+                            pixels[i] = tiny_skia::PremultipliedColorU8::from_rgba(pm_r, pm_g, pm_b, pm_a)
+                                .expect("valid premultiplied color");
+                        }
+                    }
+
+                    // Blit glyph to main pixmap
+                    let glyph_x_int = glyph_x.round() as i32;
+                    let glyph_y_int = glyph_y.round() as i32;
+
+                    pixmap.draw_pixmap(
+                        glyph_x_int,
+                        glyph_y_int,
+                        glyph_pixmap.as_ref(),
+                        &PixmapPaint::default(),
+                        Transform::identity(),
+                        None,
+                    );
+                }
+            }
+
+            cursor_x += metrics.advance_width;
         }
     }
 
@@ -143,7 +314,7 @@ impl IconRenderer {
     fn draw_label(&self, pixmap: &mut Pixmap, name: &str) -> Result<()> {
         // Truncate name if too long
         let max_chars = 12;
-        let _display_name = if name.len() > max_chars {
+        let display_name = if name.len() > max_chars {
             format!("{}...", &name[..max_chars - 3])
         } else {
             name.to_string()
@@ -160,8 +331,18 @@ impl IconRenderer {
             pixmap.fill_rect(rect, &bg_paint, Transform::identity(), None);
         }
 
-        // Note: Actual text rendering would use fontdue
-        // For now, we just have the background
+        // Render text centered horizontally, with baseline near bottom of label area
+        let text_x = self.size as f32 / 2.0;
+        let text_y = label_y + label_height - 4.0; // Position baseline
+        self.render_text(
+            pixmap,
+            &display_name,
+            text_x,
+            text_y,
+            self.font_size,
+            self.label_fg,
+            TextAlign::Center,
+        );
 
         Ok(())
     }
@@ -243,8 +424,17 @@ impl IconRenderer {
                         }
                     }
                 }
-                _ => {
-                    // Image and Text rendering would need additional implementation
+                DrawCommand::Text { text, x, y, size, color, align } => {
+                    if let Some(text_color) = parse_color(color) {
+                        let alignment = TextAlign::from_str(align);
+                        self.render_text(pixmap, text, *x, *y, *size, text_color, alignment);
+                    }
+                }
+                DrawCommand::Image { .. } => {
+                    // Image rendering would need additional implementation
+                }
+                DrawCommand::StrokeCircle { .. } => {
+                    // StrokeCircle rendering would need additional implementation
                 }
             }
         }
@@ -837,5 +1027,262 @@ mod tests {
         // Should not panic
         let result = renderer.execute_commands(&mut pixmap, &commands);
         assert!(result.is_ok(), "Zero-radius circle should not cause error");
+    }
+
+    // ========================================================================
+    // Text Alignment Tests
+    // ========================================================================
+
+    #[test]
+    fn test_text_align_from_str_left() {
+        assert_eq!(TextAlign::from_str("left"), TextAlign::Left);
+        assert_eq!(TextAlign::from_str("LEFT"), TextAlign::Left);
+        assert_eq!(TextAlign::from_str("Left"), TextAlign::Left);
+    }
+
+    #[test]
+    fn test_text_align_from_str_center() {
+        assert_eq!(TextAlign::from_str("center"), TextAlign::Center);
+        assert_eq!(TextAlign::from_str("CENTER"), TextAlign::Center);
+        assert_eq!(TextAlign::from_str("Center"), TextAlign::Center);
+    }
+
+    #[test]
+    fn test_text_align_from_str_right() {
+        assert_eq!(TextAlign::from_str("right"), TextAlign::Right);
+        assert_eq!(TextAlign::from_str("RIGHT"), TextAlign::Right);
+        assert_eq!(TextAlign::from_str("Right"), TextAlign::Right);
+    }
+
+    #[test]
+    fn test_text_align_from_str_default() {
+        // Unknown values should default to Left
+        assert_eq!(TextAlign::from_str(""), TextAlign::Left);
+        assert_eq!(TextAlign::from_str("unknown"), TextAlign::Left);
+        assert_eq!(TextAlign::from_str("justify"), TextAlign::Left);
+    }
+
+    // ========================================================================
+    // Text Rendering Tests
+    // ========================================================================
+
+    #[test]
+    fn test_render_text_no_font_graceful() {
+        // Create renderer without a font
+        let renderer = IconRenderer::with_font(64, 12.0, None);
+        let mut pixmap = Pixmap::new(64, 64).unwrap();
+        pixmap.fill(Color::from_rgba8(0, 0, 0, 255));
+
+        // Should not panic or error, just skip rendering
+        renderer.render_text(
+            &mut pixmap,
+            "Hello",
+            32.0,
+            32.0,
+            12.0,
+            Color::WHITE,
+            TextAlign::Left,
+        );
+
+        // Pixmap should be unchanged (no font = no rendering)
+        let pixel = pixmap.pixel(32, 32).unwrap();
+        assert_eq!(pixel.red(), 0, "Pixmap should be unchanged when no font");
+    }
+
+    #[test]
+    fn test_render_text_empty_string() {
+        let renderer = IconRenderer::new(64, 12.0);
+        let mut pixmap = Pixmap::new(64, 64).unwrap();
+        pixmap.fill(Color::from_rgba8(0, 0, 0, 255));
+
+        // Empty string should not cause issues
+        renderer.render_text(
+            &mut pixmap,
+            "",
+            32.0,
+            32.0,
+            12.0,
+            Color::WHITE,
+            TextAlign::Left,
+        );
+
+        // Pixmap should be unchanged
+        let pixel = pixmap.pixel(32, 32).unwrap();
+        assert_eq!(pixel.red(), 0, "Pixmap should be unchanged with empty text");
+    }
+
+    #[test]
+    fn test_text_command_execution() {
+        let renderer = IconRenderer::new(64, 12.0);
+        let mut pixmap = Pixmap::new(64, 64).unwrap();
+        pixmap.fill(Color::from_rgba8(0, 0, 0, 255));
+
+        let commands = vec![DrawCommand::Text {
+            text: "Hi".to_string(),
+            x: 32.0,
+            y: 32.0,
+            size: 16.0,
+            color: "#ffffff".to_string(),
+            align: "center".to_string(),
+        }];
+
+        // Should not panic
+        let result = renderer.execute_commands(&mut pixmap, &commands);
+        assert!(result.is_ok(), "Text command should not cause error");
+    }
+
+    #[test]
+    fn test_text_command_with_invalid_color() {
+        let renderer = IconRenderer::new(64, 12.0);
+        let mut pixmap = Pixmap::new(64, 64).unwrap();
+        pixmap.fill(Color::from_rgba8(128, 128, 128, 255));
+
+        let commands = vec![DrawCommand::Text {
+            text: "Test".to_string(),
+            x: 32.0,
+            y: 32.0,
+            size: 12.0,
+            color: "invalid".to_string(),
+            align: "left".to_string(),
+        }];
+
+        // Should not panic, just skip rendering
+        let result = renderer.execute_commands(&mut pixmap, &commands);
+        assert!(result.is_ok(), "Invalid text color should not cause error");
+    }
+
+    #[test]
+    fn test_text_command_various_alignments() {
+        let renderer = IconRenderer::new(128, 12.0);
+        let mut pixmap = Pixmap::new(128, 64).unwrap();
+
+        for align in ["left", "center", "right"] {
+            let commands = vec![DrawCommand::Text {
+                text: "Test".to_string(),
+                x: 64.0,
+                y: 32.0,
+                size: 14.0,
+                color: "#ff0000".to_string(),
+                align: align.to_string(),
+            }];
+
+            let result = renderer.execute_commands(&mut pixmap, &commands);
+            assert!(result.is_ok(), "Text with {} alignment should work", align);
+        }
+    }
+
+    #[test]
+    fn test_icon_renderer_with_font_constructor() {
+        // Test the with_font constructor
+        let renderer_no_font = IconRenderer::with_font(64, 12.0, None);
+        assert!(renderer_no_font.font.is_none(), "Font should be None");
+        assert_eq!(renderer_no_font.size, 64);
+        assert_eq!(renderer_no_font.font_size, 12.0);
+    }
+
+    #[test]
+    fn test_text_rendering_does_not_panic_on_special_chars() {
+        let renderer = IconRenderer::new(128, 12.0);
+        let mut pixmap = Pixmap::new(128, 64).unwrap();
+
+        // Test various special characters
+        let test_strings = [
+            "Hello!",
+            "123",
+            "a b c",
+            "Ñ",       // Extended ASCII
+            "→",       // Arrow
+            "...",
+            "___",
+        ];
+
+        for text in test_strings {
+            let commands = vec![DrawCommand::Text {
+                text: text.to_string(),
+                x: 64.0,
+                y: 32.0,
+                size: 12.0,
+                color: "#ffffff".to_string(),
+                align: "center".to_string(),
+            }];
+
+            let result = renderer.execute_commands(&mut pixmap, &commands);
+            assert!(result.is_ok(), "Text '{}' should not cause error", text);
+        }
+    }
+
+    #[test]
+    fn test_text_rendering_with_zero_size() {
+        let renderer = IconRenderer::new(64, 12.0);
+        let mut pixmap = Pixmap::new(64, 64).unwrap();
+
+        let commands = vec![DrawCommand::Text {
+            text: "Test".to_string(),
+            x: 32.0,
+            y: 32.0,
+            size: 0.0,  // Zero font size
+            color: "#ffffff".to_string(),
+            align: "left".to_string(),
+        }];
+
+        // Should not panic
+        let result = renderer.execute_commands(&mut pixmap, &commands);
+        assert!(result.is_ok(), "Zero font size should not cause error");
+    }
+
+    #[test]
+    fn test_text_rendering_large_size() {
+        let renderer = IconRenderer::new(128, 12.0);
+        let mut pixmap = Pixmap::new(128, 128).unwrap();
+
+        let commands = vec![DrawCommand::Text {
+            text: "BIG".to_string(),
+            x: 64.0,
+            y: 100.0,
+            size: 48.0,  // Large font size
+            color: "#ff0000".to_string(),
+            align: "center".to_string(),
+        }];
+
+        let result = renderer.execute_commands(&mut pixmap, &commands);
+        assert!(result.is_ok(), "Large font size should not cause error");
+    }
+
+    #[test]
+    fn test_text_rendering_outside_bounds() {
+        let renderer = IconRenderer::new(64, 12.0);
+        let mut pixmap = Pixmap::new(64, 64).unwrap();
+
+        // Text positioned outside the pixmap bounds
+        let commands = vec![DrawCommand::Text {
+            text: "Outside".to_string(),
+            x: -100.0,
+            y: -100.0,
+            size: 12.0,
+            color: "#ffffff".to_string(),
+            align: "left".to_string(),
+        }];
+
+        let result = renderer.execute_commands(&mut pixmap, &commands);
+        assert!(result.is_ok(), "Text outside bounds should not cause error");
+    }
+
+    #[test]
+    fn test_text_with_alpha_color() {
+        let renderer = IconRenderer::new(64, 12.0);
+        let mut pixmap = Pixmap::new(64, 64).unwrap();
+        pixmap.fill(Color::from_rgba8(255, 255, 255, 255));
+
+        let commands = vec![DrawCommand::Text {
+            text: "Alpha".to_string(),
+            x: 32.0,
+            y: 32.0,
+            size: 14.0,
+            color: "#ff000080".to_string(),  // Red with 50% alpha
+            align: "center".to_string(),
+        }];
+
+        let result = renderer.execute_commands(&mut pixmap, &commands);
+        assert!(result.is_ok(), "Text with alpha should not cause error");
     }
 }

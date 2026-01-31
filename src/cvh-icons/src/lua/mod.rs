@@ -124,7 +124,7 @@ impl LuaRuntime {
     }
 
     /// load and exec an icon script
-    pub fn load_script(&self, path: &Path) -> Result<IconScript> {
+    pub fn load_script(&self, path: &Path) -> Result<IconScript<'_>> {
         let content = std::fs::read_to_string(path)
             .with_context(|| format!("Failed to read script: {}", path.display()))?;
 
@@ -137,7 +137,7 @@ impl LuaRuntime {
         let icon_table: Table = globals.get("Icon")
             .context("Script must define an 'Icon' table")?;
 
-        Ok(IconScript { icon_table })
+        Ok(IconScript { lua: &self.lua, icon_table })
     }
 
     /// execute a lua string for repl/testing
@@ -154,12 +154,13 @@ impl LuaRuntime {
 
 /// represents a loaded icon script
 #[allow(dead_code)]
-pub struct IconScript {
+pub struct IconScript<'lua> {
+    lua: &'lua Lua,
     icon_table: Table,
 }
 
 #[allow(dead_code)]
-impl IconScript {
+impl<'lua> IconScript<'lua> {
     /// get a property from icon table
     pub fn get<T: mlua::FromLua>(&self, key: &str) -> Result<T> {
         self.icon_table
@@ -172,27 +173,123 @@ impl IconScript {
         self.icon_table.get(key).ok()
     }
 
+    /// set a property on the icon table
+    pub fn set<T: mlua::IntoLua>(&self, key: &str, value: T) -> Result<()> {
+        self.icon_table
+            .set(key, value)
+            .with_context(|| format!("Failed to set property: {}", key))
+    }
+
     /// call the init method (iff exists)
     pub fn call_init(&self) -> Result<()> {
         if let Ok(init_fn) = self.icon_table.get::<Function>("init") {
-            init_fn.call::<()>(())?;
+            init_fn.call::<()>(self.icon_table.clone())?;
         }
         Ok(())
     }
 
-    /// call the render method
+    /// call the render method with Canvas UserData
     ///
-    /// NOTE: we pass the icon table itself to the render function by convention
-    /// if you intend to expose the canvas object to Lua directly, implement
-    /// a ToLua conversion for canvas and pass it here instead
-    pub fn call_render(&self, _canvas: &api::Canvas) -> Result<()> {
-        if let Ok(render_fn) = self.icon_table.get::<Function>("render") {
-            render_fn.call::<()>(self.icon_table.clone())?;
+    /// Creates a Canvas, passes it to the Lua render function,
+    /// and returns the collected DrawCommands after render completes.
+    pub fn call_render(&self, width: u32, height: u32) -> Result<Vec<api::DrawCommand>> {
+        let render_fn: Function = match self.icon_table.get("render") {
+            Ok(f) => f,
+            Err(_) => return Ok(Vec::new()), // No render function, return empty
+        };
+
+        // Create canvas and pass to Lua as UserData
+        let canvas = api::Canvas::new(width, height);
+        let canvas_userdata = self.lua.create_userdata(canvas)?;
+
+        // Call render(self, canvas) - Lua method call convention
+        render_fn.call::<()>((self.icon_table.clone(), canvas_userdata.clone()))?;
+
+        // Extract commands from the canvas UserData
+        let canvas_ref = canvas_userdata.borrow::<api::Canvas>()?;
+        Ok(canvas_ref.commands.clone())
+    }
+
+    /// call the on_click handler and return optional action
+    pub fn call_on_click(&self, button: u32, x: f64, y: f64) -> Result<Option<String>> {
+        if let Ok(handler) = self.icon_table.get::<Function>("on_click") {
+            let result: Value = handler.call((self.icon_table.clone(), button, x, y))?;
+            if let Value::String(s) = result {
+                return Ok(Some(s.to_str()?.to_string()));
+            }
+        }
+        Ok(None)
+    }
+
+    /// call the on_hover handler
+    pub fn call_on_hover(&self, entered: bool) -> Result<()> {
+        if let Ok(handler) = self.icon_table.get::<Function>("on_hover") {
+            handler.call::<()>((self.icon_table.clone(), entered))?;
         }
         Ok(())
     }
 
-    /// call the on_click handler
+    /// call the on_drop handler and return optional action
+    pub fn call_on_drop(&self, paths: Vec<String>) -> Result<Option<String>> {
+        if let Ok(handler) = self.icon_table.get::<Function>("on_drop") {
+            let paths_table = self.lua.create_table()?;
+            for (i, path) in paths.iter().enumerate() {
+                paths_table.set(i + 1, path.as_str())?;
+            }
+            let result: Value = handler.call((self.icon_table.clone(), paths_table))?;
+            if let Value::String(s) = result {
+                return Ok(Some(s.to_str()?.to_string()));
+            }
+        }
+        Ok(None)
+    }
+
+    /// call the get_position method to compute icon position
+    ///
+    /// Returns (x, y) position for the icon on screen
+    pub fn call_get_position(
+        &self,
+        screen_width: u32,
+        screen_height: u32,
+        icon_count: u32,
+        icon_index: u32,
+        cell_width: Option<u32>,
+        cell_height: Option<u32>,
+    ) -> Result<(i32, i32)> {
+        if let Ok(pos_fn) = self.icon_table.get::<Function>("get_position") {
+            // Create input table for Lua
+            let input = self.lua.create_table()?;
+            input.set("screen_width", screen_width)?;
+            input.set("screen_height", screen_height)?;
+            input.set("icon_count", icon_count)?;
+            input.set("icon_index", icon_index)?;
+            if let Some(cw) = cell_width {
+                input.set("cell_width", cw)?;
+            }
+            if let Some(ch) = cell_height {
+                input.set("cell_height", ch)?;
+            }
+
+            let result: Table = pos_fn.call((self.icon_table.clone(), input))?;
+            let x: i32 = result.get("x").unwrap_or(0);
+            let y: i32 = result.get("y").unwrap_or(0);
+            return Ok((x, y));
+        }
+
+        // Default grid-based positioning if no get_position function
+        let cell_w = cell_width.unwrap_or(96) as i32;
+        let cell_h = cell_height.unwrap_or(96) as i32;
+        let margin = 20i32;
+        let cols = ((screen_width as i32 - margin * 2) / cell_w).max(1);
+
+        let col = (icon_index as i32) % cols;
+        let row = (icon_index as i32) / cols;
+
+        Ok((margin + col * cell_w, margin + row * cell_h))
+    }
+
+    /// Legacy method for backwards compatibility
+    #[deprecated(note = "Use call_on_click instead")]
     pub fn co_click(&self, button: u32, x: f64, y: f64) -> Result<()> {
         if let Ok(handler) = self.icon_table.get::<Function>("on_click") {
             handler.call::<()>((button, x, y))?;
@@ -200,12 +297,11 @@ impl IconScript {
         Ok(())
     }
 
-    /// call the on_drop handler
-    ///
-    /// `lua` is required here for construction of a lua table for the paths
-    pub fn co_drop(&self, lua: &Lua, paths: Vec<String>) -> Result<()> {
+    /// Legacy method for backwards compatibility
+    #[deprecated(note = "Use call_on_drop instead")]
+    pub fn co_drop(&self, paths: Vec<String>) -> Result<()> {
         if let Ok(handler) = self.icon_table.get::<Function>("on_drop") {
-            let paths_table = lua.create_table()?;
+            let paths_table = self.lua.create_table()?;
             for (i, path) in paths.iter().enumerate() {
                 paths_table.set(i + 1, path.as_str())?;
             }
@@ -749,5 +845,194 @@ mod tests {
         let cvh: Table = rt.lua().globals().get("cvh").unwrap();
         let notify: Value = cvh.get("notify").unwrap();
         assert!(matches!(notify, Value::Function(_)), "cvh.notify should be a function");
+    }
+
+    // ========================================================================
+    // IconScript Tests
+    // ========================================================================
+
+    #[test]
+    fn test_iconscript_call_render_returns_draw_commands() {
+        let rt = create_test_runtime();
+        rt.exec(r##"
+            Icon = {
+                name = "test",
+                width = 64,
+                height = 80,
+            }
+            function Icon:render(canvas)
+                canvas:clear("#000000")
+                canvas:fill_rect(0, 0, 32, 32, "#FF0000")
+            end
+        "##).unwrap();
+
+        let globals = rt.lua().globals();
+        let icon_table: Table = globals.get("Icon").unwrap();
+        let script = IconScript { lua: rt.lua(), icon_table };
+
+        let commands = script.call_render(64, 80).unwrap();
+        assert_eq!(commands.len(), 2, "Should have 2 draw commands");
+    }
+
+    #[test]
+    fn test_iconscript_call_render_no_render_function() {
+        let rt = create_test_runtime();
+        rt.exec(r#"
+            Icon = {
+                name = "test",
+            }
+        "#).unwrap();
+
+        let globals = rt.lua().globals();
+        let icon_table: Table = globals.get("Icon").unwrap();
+        let script = IconScript { lua: rt.lua(), icon_table };
+
+        let commands = script.call_render(64, 80).unwrap();
+        assert!(commands.is_empty(), "Should return empty commands when no render function");
+    }
+
+    #[test]
+    fn test_iconscript_call_on_click() {
+        let rt = create_test_runtime();
+        rt.exec(r#"
+            Icon = {
+                name = "test",
+            }
+            function Icon:on_click(button, x, y)
+                if button == 1 then
+                    return "select"
+                end
+                return nil
+            end
+        "#).unwrap();
+
+        let globals = rt.lua().globals();
+        let icon_table: Table = globals.get("Icon").unwrap();
+        let script = IconScript { lua: rt.lua(), icon_table };
+
+        let action = script.call_on_click(1, 10.0, 20.0).unwrap();
+        assert_eq!(action, Some("select".to_string()));
+
+        let action2 = script.call_on_click(2, 10.0, 20.0).unwrap();
+        assert!(action2.is_none());
+    }
+
+    #[test]
+    fn test_iconscript_call_on_hover() {
+        let rt = create_test_runtime();
+        rt.exec(r#"
+            Icon = {
+                name = "test",
+                hovered = false,
+            }
+            function Icon:on_hover(entered)
+                self.hovered = entered
+            end
+        "#).unwrap();
+
+        let globals = rt.lua().globals();
+        let icon_table: Table = globals.get("Icon").unwrap();
+        let script = IconScript { lua: rt.lua(), icon_table };
+
+        script.call_on_hover(true).unwrap();
+        let hovered: bool = script.get("hovered").unwrap();
+        assert!(hovered, "Icon should be hovered after on_hover(true)");
+
+        script.call_on_hover(false).unwrap();
+        let hovered: bool = script.get("hovered").unwrap();
+        assert!(!hovered, "Icon should not be hovered after on_hover(false)");
+    }
+
+    #[test]
+    fn test_iconscript_call_get_position_with_function() {
+        let rt = create_test_runtime();
+        rt.exec(r#"
+            Icon = {
+                name = "test",
+            }
+            function Icon:get_position(input)
+                return {
+                    x = input.icon_index * 100,
+                    y = math.floor(input.icon_index / 5) * 100
+                }
+            end
+        "#).unwrap();
+
+        let globals = rt.lua().globals();
+        let icon_table: Table = globals.get("Icon").unwrap();
+        let script = IconScript { lua: rt.lua(), icon_table };
+
+        let (x, y) = script.call_get_position(1920, 1080, 25, 7, Some(96), Some(96)).unwrap();
+        assert_eq!(x, 700); // 7 * 100
+        assert_eq!(y, 100); // floor(7/5) * 100 = 1 * 100
+    }
+
+    #[test]
+    fn test_iconscript_call_get_position_default_grid() {
+        let rt = create_test_runtime();
+        rt.exec(r#"
+            Icon = {
+                name = "test",
+            }
+            -- No get_position function defined, should use default
+        "#).unwrap();
+
+        let globals = rt.lua().globals();
+        let icon_table: Table = globals.get("Icon").unwrap();
+        let script = IconScript { lua: rt.lua(), icon_table };
+
+        // With 1920 width, margin 20, cell 96: cols = (1920-40)/96 = 19
+        // icon_index 20: col = 20 % 19 = 1, row = 20 / 19 = 1
+        let (x, y) = script.call_get_position(1920, 1080, 25, 20, Some(96), Some(96)).unwrap();
+        // x = 20 + 1 * 96 = 116
+        // y = 20 + 1 * 96 = 116
+        assert_eq!(x, 116);
+        assert_eq!(y, 116);
+    }
+
+    #[test]
+    fn test_iconscript_set_property() {
+        let rt = create_test_runtime();
+        rt.exec(r#"
+            Icon = {
+                name = "test",
+                path = "",
+            }
+        "#).unwrap();
+
+        let globals = rt.lua().globals();
+        let icon_table: Table = globals.get("Icon").unwrap();
+        let script = IconScript { lua: rt.lua(), icon_table };
+
+        script.set("path", "/home/user/test.txt").unwrap();
+        let path: String = script.get("path").unwrap();
+        assert_eq!(path, "/home/user/test.txt");
+    }
+
+    #[test]
+    fn test_iconscript_canvas_methods_work() {
+        let rt = create_test_runtime();
+        rt.exec(r##"
+            Icon = {
+                name = "test",
+            }
+            function Icon:render(canvas)
+                canvas:clear("#FFFFFF")
+                canvas:fill_rect(10, 10, 44, 44, "#0000FF")
+                canvas:stroke_rect(5, 5, 54, 54, "#FF0000", 2)
+                canvas:fill_circle(32, 32, 16, "#00FF00")
+                canvas:stroke_circle(32, 32, 24, "#FFFF00", 1)
+                canvas:line(0, 0, 64, 80, "#000000", 1)
+                canvas:text("test", 32, 70, 12, "#000000", "center")
+                canvas:image("/path/to/img.png", 0, 0, 64, 64)
+            end
+        "##).unwrap();
+
+        let globals = rt.lua().globals();
+        let icon_table: Table = globals.get("Icon").unwrap();
+        let script = IconScript { lua: rt.lua(), icon_table };
+
+        let commands = script.call_render(64, 80).unwrap();
+        assert_eq!(commands.len(), 8, "Should have 8 draw commands");
     }
 }

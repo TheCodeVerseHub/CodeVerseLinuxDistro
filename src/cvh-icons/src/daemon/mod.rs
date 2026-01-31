@@ -14,7 +14,7 @@ use std::time::Duration;
 use tracing::{debug, error, info, warn};
 
 use crate::config::Config;
-use crate::icons::DesktopIcon;
+use crate::icons::{DesktopIcon, IconType};
 
 /// Icon daemon that manages desktop icons
 pub struct IconDaemon {
@@ -102,16 +102,89 @@ impl IconDaemon {
             return Ok(());
         }
 
-        let icon = DesktopIcon::new(path, &self.config)?;
+        let mut icon = DesktopIcon::new(path, &self.config)?;
+
+        // Try to spawn a Lua process for this icon
+        if let Some((handler_path, widget_script_path)) = self.find_script_for_icon(&icon) {
+            match icon.spawn_lua_process(&handler_path, &widget_script_path) {
+                Ok(()) => {
+                    debug!(
+                        "Spawned Lua process for icon: {} (handler: {}, script: {})",
+                        path.display(),
+                        handler_path.display(),
+                        widget_script_path.display()
+                    );
+                }
+                Err(e) => {
+                    warn!(
+                        "Failed to spawn Lua process for {}: {} (using fallback)",
+                        path.display(),
+                        e
+                    );
+                    // Icon will use fallback rendering
+                }
+            }
+        }
+
         debug!("Added icon for: {}", path.display());
         self.icons.insert(path.to_path_buf(), icon);
 
         Ok(())
     }
 
+    /// Find the IPC handler and appropriate widget script for an icon based on its type
+    ///
+    /// Returns a tuple of (handler_path, widget_script_path) if both are found
+    fn find_script_for_icon(&self, icon: &DesktopIcon) -> Option<(PathBuf, PathBuf)> {
+        let script_name = match icon.icon_type() {
+            IconType::Folder => "folder.lua",
+            IconType::File => "file.lua",
+            IconType::Symlink => "symlink.lua",
+            IconType::Executable => "executable.lua",
+            IconType::Image => "image.lua",
+            IconType::Document => "document.lua",
+            IconType::Archive => "archive.lua",
+            IconType::Video => "video.lua",
+            IconType::Audio => "audio.lua",
+            IconType::Unknown => "file.lua",
+        };
+
+        // First, find the IPC handler script
+        let mut handler_path = None;
+        for dir in &self.config.script_dirs {
+            let path = dir.join("ipc_handler.lua");
+            if path.exists() {
+                handler_path = Some(path);
+                break;
+            }
+        }
+
+        // If no handler found, we can't spawn a Lua process
+        let handler_path = handler_path?;
+
+        // Search through script directories for the widget script
+        for dir in &self.config.script_dirs {
+            let script_path = dir.join(script_name);
+            if script_path.exists() {
+                return Some((handler_path.clone(), script_path));
+            }
+
+            // Also check in widgets subdirectory
+            let widgets_path = dir.join("widgets").join(script_name);
+            if widgets_path.exists() {
+                return Some((handler_path.clone(), widgets_path));
+            }
+        }
+
+        // No matching widget script found
+        None
+    }
+
     /// Remove an icon
     fn remove_icon(&mut self, path: &Path) {
-        if self.icons.remove(path).is_some() {
+        if let Some(mut icon) = self.icons.remove(path) {
+            // Kill the Lua process before removing the icon
+            icon.kill_lua_process();
             debug!("Removed icon for: {}", path.display());
         }
     }
@@ -148,11 +221,81 @@ impl IconDaemon {
 
     /// Update all icons
     fn update_icons(&mut self) {
-        for icon in self.icons.values_mut() {
+        // Collect paths of icons to remove (file no longer exists)
+        let mut to_remove = Vec::new();
+
+        for (path, icon) in self.icons.iter_mut() {
             if let Err(e) = icon.update() {
                 warn!("Error updating icon: {}", e);
+                to_remove.push(path.clone());
             }
         }
+
+        // Remove icons for deleted files
+        for path in to_remove {
+            self.remove_icon(&path);
+        }
+    }
+
+    /// Request render for all icons (called when display needs update)
+    ///
+    /// Returns a vector of (path, draw_commands) pairs
+    #[allow(dead_code)]
+    pub fn render_all_icons(
+        &mut self,
+        canvas_width: u32,
+        canvas_height: u32,
+        device_pixel_ratio: f32,
+    ) -> Vec<(PathBuf, Vec<crate::lua::DrawCommand>)> {
+        self.icons
+            .iter_mut()
+            .map(|(path, icon)| {
+                let commands = icon.request_render(canvas_width, canvas_height, device_pixel_ratio);
+                (path.clone(), commands)
+            })
+            .collect()
+    }
+
+    /// Calculate positions for all icons
+    ///
+    /// Returns a vector of (path, position) pairs
+    #[allow(dead_code)]
+    pub fn position_all_icons(
+        &mut self,
+        screen_width: u32,
+        screen_height: u32,
+        cell_width: Option<u32>,
+        cell_height: Option<u32>,
+    ) -> Vec<(PathBuf, crate::ipc::Position)> {
+        let icon_count = self.icons.len() as u32;
+
+        self.icons
+            .iter_mut()
+            .enumerate()
+            .map(|(index, (path, icon))| {
+                let position = icon.request_position(
+                    screen_width,
+                    screen_height,
+                    icon_count,
+                    index as u32,
+                    cell_width,
+                    cell_height,
+                );
+                (path.clone(), position)
+            })
+            .collect()
+    }
+
+    /// Get an icon by path
+    #[allow(dead_code)]
+    pub fn get_icon(&self, path: &Path) -> Option<&DesktopIcon> {
+        self.icons.get(path)
+    }
+
+    /// Get a mutable icon by path
+    #[allow(dead_code)]
+    pub fn get_icon_mut(&mut self, path: &Path) -> Option<&mut DesktopIcon> {
+        self.icons.get_mut(path)
     }
 
     /// Run the main daemon loop using calloop
