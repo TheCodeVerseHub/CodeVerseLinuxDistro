@@ -1,0 +1,19 @@
+// Wiki: https://yalter.github.io/niri/Configuration%3A-Key-Bindings.html
+
+binds {
+    Mod+Alt+Space  { spawn-sh "rofi -show codeverse -modi 'codeverse:~/.config/rofi/scripts/codeverse-menu.sh'"; }
+    Mod+Alt+C      { spawn "~/.config/rofi/scripts/rofi-clipboard.sh"; }
+    Mod+P          { spawn "~/.config/rofi/scripts/rofi-powermenu.sh"; }
+    Mod+K          { spawn "~/.config/rofi/scripts/rofi-keybind-menu.sh"; }
+    Mod+Alt+N      { spawn "~/.config/rofi/scripts/rofi-notification-menu.sh"; }
+    Mod+Alt+B      { spawn "~/.config/rofi/scripts/rofi-battery-power-menu.sh"; }
+    Mod+Ctrl+Space { spawn "~/.config/rofi/scripts/rofi-wallpaper-selector.sh"; }
+    Mod+X          { spawn "~/.config/rofi/scripts/rofi-calculator.sh"; }
+    Mod+Alt+E      { spawn "~/.config/rofi/scripts/rofi-emoji-selector.sh"; }
+    Alt+C          { spawn "~/.config/rofi/scripts/rofi-configs-menu.sh"; }
+    Alt+V          { spawn "~/.config/rofi/scripts/rofi-volume-selector.sh"; }
+    Alt+B          { spawn "~/.config/rofi/scripts/rofi-brightness-selector.sh"; }
+    Alt+W          { spawn "~/.config/rofi/scripts/rofi-wifi-menu.sh"; }
+    Alt+S          { spawn "~/.config/rofi/scripts/rofi-screenshot-menu.sh"; }
+    Alt+R          { spawn "~/.config/rofi/scripts/rofi-screen-recorder-menu.sh"; }
+}
