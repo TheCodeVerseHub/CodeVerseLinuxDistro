@@ -317,6 +317,55 @@ EOF
     log_success "cvh-branding PKGBUILD created"
 }
 
+# Build an AUR package
+build_aur_package() {
+    local pkgname="$1"
+    local aur_dir="$PKGBUILD_DIR/aur"
+
+    log_info "Building AUR package: $pkgname"
+
+    mkdir -p "$aur_dir"
+    cd "$aur_dir"
+
+    # Remove old clone if exists
+    rm -rf "$pkgname"
+
+    # Clone from AUR
+    if ! git clone --depth=1 "https://aur.archlinux.org/${pkgname}.git" 2>/dev/null; then
+        log_warn "Failed to clone $pkgname from AUR"
+        return 1
+    fi
+
+    cd "$pkgname"
+
+    # Build package (without installing)
+    if makepkg -sf --noconfirm; then
+        # Copy to repo
+        cp -f *.pkg.tar.zst "$REPO_DIR/" 2>/dev/null || true
+        log_success "AUR package $pkgname built"
+        return 0
+    else
+        log_warn "Failed to build AUR package $pkgname"
+        return 1
+    fi
+}
+
+# Build all AUR packages
+build_aur_packages() {
+    log_info "Building AUR packages..."
+
+    local aur_packages=(
+        "mpvpaper"
+        "fzf-zsh-plugin"
+    )
+
+    for pkg in "${aur_packages[@]}"; do
+        build_aur_package "$pkg" || true
+    done
+
+    log_success "AUR packages processed"
+}
+
 # Build all packages
 build_all_packages() {
     mkdir -p "$REPO_DIR"
@@ -395,8 +444,11 @@ main() {
     build_cvh_fuzzy
     build_cvh_icons
 
-    # Build packages
+    # Build CVH packages
     build_all_packages
+
+    # Build AUR packages
+    build_aur_packages
 
     # Update repo
     update_repo_db

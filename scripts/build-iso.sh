@@ -83,6 +83,21 @@ prepare_profile() {
         log_warn "GRUB theme not found at $theme_src"
     fi
 
+    # Sync niri config from configs to ISO skel (including wallpapers)
+    local niri_src="$PROJECT_ROOT/configs/setup-configs/niri"
+    local niri_dest="$WORK_DIR/profile/airootfs/etc/skel/.config/niri"
+
+    if [[ -d "$niri_src" ]]; then
+        log_info "Syncing niri configuration..."
+        mkdir -p "$niri_dest"
+        cp -r "$niri_src"/* "$niri_dest/"
+        # Make scripts executable
+        chmod +x "$niri_dest/scripts/"*.sh 2>/dev/null || true
+        log_success "Niri config synced to ISO profile"
+    else
+        log_warn "Niri config not found at $niri_src"
+    fi
+
     # Make scripts executable
     chmod +x "$WORK_DIR/profile/profiledef.sh"
 

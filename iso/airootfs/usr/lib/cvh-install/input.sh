@@ -37,21 +37,14 @@ select_timezone() {
     echo -e "\n  ${GREEN}✓${NC} Timezone: ${BOLD}$TIMEZONE${NC}"
 }
 
-# Select compositor
+# Set compositor (niri only)
 select_compositor() {
-    step_header "Compositor Selection"
+    step_header "Compositor"
 
-    local comp_options=(
-        "niri - Scrollable-tiling compositor"
-        "hyprland - Dynamic tiling compositor"
-    )
+    # CVH Linux uses niri as the default compositor
+    COMPOSITOR="niri"
 
-    local selection
-    selection=$(gum choose --header "Select Wayland compositor" --cursor.foreground="6" "${comp_options[@]}")
-
-    COMPOSITOR="${selection%% *}"
-
-    echo -e "\n  ${GREEN}✓${NC} Compositor: ${BOLD}$COMPOSITOR${NC}"
+    echo -e "\n  ${GREEN}✓${NC} Compositor: ${BOLD}$COMPOSITOR${NC} (scrollable-tiling)"
 }
 
 # Select disk for installation

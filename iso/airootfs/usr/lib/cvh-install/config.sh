@@ -18,7 +18,7 @@ export HOSTNAME="cvh-linux"
 export TIMEZONE="Asia/Jerusalem"
 export LOCALE="en_US.UTF-8"
 export KEYMAP="us"
-export COMPOSITOR=""  # Will be "niri" or "hyprland"
+export COMPOSITOR="niri"  # CVH Linux uses niri compositor
 
 # Package lists
 get_base_packages() {
@@ -60,25 +60,14 @@ get_niri_packages() {
     echo "xdg-desktop-portal-gtk"
 }
 
-get_hyprland_packages() {
-    echo "hyprland"
-    echo "xdg-desktop-portal-wlr"
-    echo "polkit-gnome"
-}
-
-# Get all packages based on compositor selection
+# Get all packages for installation
 get_all_packages() {
     get_base_packages
     get_shell_utils
     get_system_utils
     get_sandbox_packages
     get_wayland_packages
-
-    if [[ "$COMPOSITOR" == "niri" ]]; then
-        get_niri_packages
-    elif [[ "$COMPOSITOR" == "hyprland" ]]; then
-        get_hyprland_packages
-    fi
+    get_niri_packages
 }
 
 # Check if running as root

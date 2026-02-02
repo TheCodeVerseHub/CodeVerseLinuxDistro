@@ -36,6 +36,7 @@ dbus
 grub
 efibootmgr
 os-prober
+syslinux
 
 # =============================================================================
 # FILESYSTEM UTILITIES
@@ -209,11 +210,16 @@ gcc
 pkgconf
 
 # =============================================================================
-# CVH LINUX CUSTOM PACKAGES
+# CVH LINUX CUSTOM PACKAGES (from cvh-linux repo)
 # =============================================================================
 cvh-fuzzy
 cvh-icons
 cvh-branding
+
+# =============================================================================
+# AUR PACKAGES (pre-built in cvh-linux repo)
+# =============================================================================
+# mpvpaper and fzf-zsh-plugin are already in the list above
 
 # =============================================================================
 # DEFAULT APPLICATIONS
@@ -229,8 +235,6 @@ nwg-look
 tangram
 
 # =============================================================================
-# MISCELLANEOUS STUFF THAT IS NOT ON PACMAN
+# NOTES
 # =============================================================================
-# ---  Brave browser, requires AUR ( yay -S brave-bin ) ---
-# --- Oh my zsh, requires to be installed by running this in the terminal:
-# sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" ---
+# Oh My Zsh is installed automatically during system setup

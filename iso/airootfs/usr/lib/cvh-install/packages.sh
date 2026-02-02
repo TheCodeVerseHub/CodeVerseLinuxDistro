@@ -27,8 +27,8 @@ install_base() {
     gum style --faint "  ────────────────────────────────────────────────────────"
     echo
 
-    # Run pacstrap - show output directly
-    if pacstrap -K /mnt "${packages[@]}"; then
+    # Run pacstrap - use host cache (-c) to avoid re-downloading packages already in ISO
+    if pacstrap -c -K /mnt "${packages[@]}"; then
         echo
         gum style --faint "  ────────────────────────────────────────────────────────"
         gum style --foreground 82 "  ✓ Base system installed"

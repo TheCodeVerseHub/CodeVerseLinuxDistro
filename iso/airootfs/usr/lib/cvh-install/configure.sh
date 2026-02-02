@@ -51,8 +51,6 @@ configure_system() {
 
 # Write the chroot configuration script
 write_chroot_script() {
-    local compositor_session="niri-session"
-    [[ "$COMPOSITOR" == "hyprland" ]] && compositor_session="Hyprland"
 
     # Write base configuration
     cat > /mnt/root/configure.sh << CONFIGURE_SCRIPT
@@ -195,194 +193,23 @@ chmod 440 /etc/sudoers.d/wheel
 su - $USERNAME -c 'git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git ~/.oh-my-zsh 2>/dev/null' || true
 su - $USERNAME -c 'cp ~/.oh-my-zsh/templates/zshrc.zsh-template ~/.zshrc 2>/dev/null' || true
 
-# Create compositor config based on selection
-if [[ "$COMPOSITOR" == "niri" ]]; then
-    su - $USERNAME -c 'mkdir -p ~/.config/niri'
-    cat > /home/$USERNAME/.config/niri/config.kdl << 'NIRI_EOF'
-input {
-    keyboard {
-        xkb {
-            layout "us"
-        }
-    }
-    touchpad {
-        tap
-        natural-scroll
-    }
-}
-
-layout {
-    gaps 8
-
-    focus-ring {
-        width 2
-        active-color "#88c0d0"
-    }
-}
-
-spawn-at-startup "mako"
-
-binds {
-    Mod+Return { spawn "foot"; }
-    Mod+D { spawn "fuzzel"; }
-    Mod+Shift+Q { close-window; }
-    Mod+Shift+E { quit; }
-
-    Mod+H { focus-column-left; }
-    Mod+J { focus-window-down; }
-    Mod+K { focus-window-up; }
-    Mod+L { focus-column-right; }
-
-    Mod+1 { focus-workspace 1; }
-    Mod+2 { focus-workspace 2; }
-    Mod+3 { focus-workspace 3; }
-    Mod+4 { focus-workspace 4; }
-    Mod+5 { focus-workspace 5; }
-    Mod+6 { focus-workspace 6; }
-    Mod+7 { focus-workspace 7; }
-    Mod+8 { focus-workspace 8; }
-    Mod+9 { focus-workspace 9; }
-
-    Print { spawn "sh" "-c" "grim -g \\\"\$(slurp)\\\" ~/Pictures/screenshot-\$(date +%Y%m%d-%H%M%S).png"; }
-}
-NIRI_EOF
-    chown -R $USERNAME:$USERNAME /home/$USERNAME/.config/niri
-
-elif [[ "$COMPOSITOR" == "hyprland" ]]; then
-    su - $USERNAME -c 'mkdir -p ~/.config/hypr'
-    cat > /home/$USERNAME/.config/hypr/hyprland.conf << 'HYPR_EOF'
-# CVH Linux Hyprland Configuration
-
-monitor=,preferred,auto,auto
-
-\$terminal = foot
-\$menu = cvh-fuzzy --mode apps
-
-env = QT_QPA_PLATFORM,wayland
-env = MOZ_ENABLE_WAYLAND,1
-env = XCURSOR_THEME,Adwaita
-env = XCURSOR_SIZE,24
-
-input {
-    kb_layout = us
-    repeat_delay = 300
-    repeat_rate = 50
-    touchpad {
-        natural_scroll = true
-        tap-to-click = true
-    }
-}
-
-general {
-    gaps_in = 8
-    gaps_out = 8
-    border_size = 2
-    col.active_border = rgba(88c0d0ff)
-    col.inactive_border = rgba(4c566aff)
-    layout = dwindle
-}
-
-decoration {
-    rounding = 0
-    blur { enabled = false }
-    drop_shadow = false
-}
-
-animations {
-    enabled = true
-    bezier = easeOut, 0.16, 1, 0.3, 1
-    animation = windows, 1, 3, easeOut, slide
-    animation = workspaces, 1, 4, easeOut, slide
-}
-
-exec-once = cvh-icons
-exec-once = mako
-exec-once = /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1
-
-\$mainMod = SUPER
-
-bind = \$mainMod, RETURN, exec, \$terminal
-bind = \$mainMod, D, exec, \$menu
-bind = \$mainMod SHIFT, Q, killactive
-bind = \$mainMod SHIFT, E, exit
-
-# Focus (vim-style and arrows)
-bind = \$mainMod, H, movefocus, l
-bind = \$mainMod, L, movefocus, r
-bind = \$mainMod, K, movefocus, u
-bind = \$mainMod, J, movefocus, d
-bind = \$mainMod, LEFT, movefocus, l
-bind = \$mainMod, RIGHT, movefocus, r
-bind = \$mainMod, UP, movefocus, u
-bind = \$mainMod, DOWN, movefocus, d
-
-# Move windows
-bind = \$mainMod SHIFT, H, movewindow, l
-bind = \$mainMod SHIFT, L, movewindow, r
-bind = \$mainMod SHIFT, K, movewindow, u
-bind = \$mainMod SHIFT, J, movewindow, d
-
-# Workspaces
-bind = \$mainMod, 1, workspace, 1
-bind = \$mainMod, 2, workspace, 2
-bind = \$mainMod, 3, workspace, 3
-bind = \$mainMod, 4, workspace, 4
-bind = \$mainMod, 5, workspace, 5
-bind = \$mainMod, 6, workspace, 6
-bind = \$mainMod, 7, workspace, 7
-bind = \$mainMod, 8, workspace, 8
-bind = \$mainMod, 9, workspace, 9
-
-bind = \$mainMod SHIFT, 1, movetoworkspace, 1
-bind = \$mainMod SHIFT, 2, movetoworkspace, 2
-bind = \$mainMod SHIFT, 3, movetoworkspace, 3
-bind = \$mainMod SHIFT, 4, movetoworkspace, 4
-bind = \$mainMod SHIFT, 5, movetoworkspace, 5
-bind = \$mainMod SHIFT, 6, movetoworkspace, 6
-bind = \$mainMod SHIFT, 7, movetoworkspace, 7
-bind = \$mainMod SHIFT, 8, movetoworkspace, 8
-bind = \$mainMod SHIFT, 9, movetoworkspace, 9
-
-# Screenshots
-bind = , PRINT, exec, grim -g "\\\$(slurp)" ~/Pictures/Screenshots/screenshot-\\\$(date +%Y-%m-%d-%H-%M-%S).png
-bind = \$mainMod, PRINT, exec, grim ~/Pictures/Screenshots/screenshot-\\\$(date +%Y-%m-%d-%H-%M-%S).png
-
-# Audio
-bindl = , XF86AudioRaiseVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+
-bindl = , XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-
-bindl = , XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
-
-# Brightness
-bind = , XF86MonBrightnessUp, exec, brightnessctl set 5%+
-bind = , XF86MonBrightnessDown, exec, brightnessctl set 5%-
-
-bindm = \$mainMod, mouse:272, movewindow
-bindm = \$mainMod, mouse:273, resizewindow
-HYPR_EOF
-    chown -R $USERNAME:$USERNAME /home/$USERNAME/.config/hypr
+# Set up niri compositor config
+su - $USERNAME -c 'mkdir -p ~/.config/niri'
+# Copy niri config from /etc/skel (synced during ISO build)
+if [[ -d /etc/skel/.config/niri ]]; then
+    cp -r /etc/skel/.config/niri/* /home/$USERNAME/.config/niri/
 fi
+chown -R $USERNAME:$USERNAME /home/$USERNAME/.config/niri
 
 # Create Wayland session file for Ly display manager
 mkdir -p /usr/share/wayland-sessions
-
-if [[ "$COMPOSITOR" == "niri" ]]; then
-    cat > /usr/share/wayland-sessions/niri.desktop << 'SESSION_EOF'
+cat > /usr/share/wayland-sessions/niri.desktop << 'SESSION_EOF'
 [Desktop Entry]
 Name=Niri
 Comment=Scrollable-tiling Wayland compositor
 Exec=niri-session
 Type=Application
 SESSION_EOF
-
-elif [[ "$COMPOSITOR" == "hyprland" ]]; then
-    cat > /usr/share/wayland-sessions/hyprland.desktop << 'SESSION_EOF'
-[Desktop Entry]
-Name=Hyprland
-Comment=Dynamic tiling Wayland compositor
-Exec=Hyprland
-Type=Application
-SESSION_EOF
-fi
 
 # Create .zshrc
 cat > /home/$USERNAME/.zshrc << 'ZSHRC_EOF'
@@ -421,12 +248,8 @@ ZSHRC_EOF
 su - $USERNAME -c 'touch ~/.zsh_history'
 su - $USERNAME -c 'chmod 600 ~/.zsh_history'
 
-# Replace compositor session based on selection
-if [[ "$COMPOSITOR" == "niri" ]]; then
-    sed -i 's/COMPOSITOR_SESSION/niri-session/g' /home/$USERNAME/.zshrc
-elif [[ "$COMPOSITOR" == "hyprland" ]]; then
-    sed -i 's/COMPOSITOR_SESSION/Hyprland/g' /home/$USERNAME/.zshrc
-fi
+# Set niri session in zshrc
+sed -i 's/COMPOSITOR_SESSION/niri-session/g' /home/$USERNAME/.zshrc
 
 chown $USERNAME:$USERNAME /home/$USERNAME/.zshrc
 
