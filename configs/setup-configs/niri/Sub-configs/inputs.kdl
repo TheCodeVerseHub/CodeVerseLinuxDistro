@@ -1,0 +1,26 @@
+// Find the full list of options on the wiki:
+// https://yalter.github.io/niri/Configuration:-Input
+input {
+    keyboard {
+        // Determines How fast your caret-cursor moves. Increase the value to increase the speed and vice versa.
+        repeat-rate 40
+        // Determines the time after which repeat of a key happens. This value is represented in "ms". Increase the value to increase the delay and vice-versa.
+        repeat-delay 200
+        // Comment this out if you dont want numlock to be activated automatically.
+        numlock
+        xkb {
+            // You can set rules, model, layout, variant and options.
+            // For more information, see xkeyboard-config(7).
+        }
+    }
+    // Next sections include libinput settings.
+    // Omitting these settings will result in default options being used.
+    touchpad {
+        tap
+        accel-speed 0.3
+    }
+    // Refer to the wiki link provided at the top to learn about these settings.
+    mouse {}
+    trackpoint {}
+    focus-follows-mouse max-scroll-amount="0%"
+}

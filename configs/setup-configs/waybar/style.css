@@ -1,0 +1,204 @@
+/* // Import colors // */
+
+@import "colors.css";
+
+/* // Styles // */
+
+* {
+  border: 0;
+  padding: 0 0;
+  font-family: "JetBrainsMono Nerd Font", monospace, system-ui;
+}
+
+window#waybar {
+  background-color: @bg-dark;
+}
+
+#custom-launcher {
+  background-color: @bg-light;
+  font-size: 16px;
+  color: @fg-dark;
+  border-radius: 14px;
+  padding: 3px 15px 5px 9px;
+  margin: 4px 8px;
+}
+
+#custom-launcher:hover {
+  background-color: @fg-dark;
+  color: @blue;
+}
+
+#window {
+  margin: 4px 40px 4px 0;
+  font-style: italic;
+  color: @light-yellow;
+  background-color: @bg-light;
+  border: none;
+  opacity: 1;
+  padding: 2px 10px;
+  border: none;
+  font-size: 12px;
+  border-radius: 14px;
+}
+
+#window:hover {
+  background-color: @fg-dark;
+  color: @blue;
+}
+
+#workspaces {
+  border-style: solid;
+  background-color: @bg-light;
+  opacity: 1;
+  border-radius: 14px;
+  margin: 4px 0;
+  padding: 2px 10px;
+}
+
+#workspaces button.focused {
+  color: @light-orange;
+}
+
+#workspaces button {
+  color: @fg-light;
+}
+
+#workspaces button:hover {
+  color: @orange;
+  box-shadow: none;
+  text-shadow: none;
+  border: 0px;
+  background: none;
+}
+
+#clock,
+#battery,
+#network,
+#pulseaudio,
+#backlight,
+#custom-power,
+#custom-notification {
+  padding: 2px 0;
+  border: none;
+  font-size: 12px;
+  border-radius: 14px;
+  color: @fg-light;
+  background-color: @bg-light;
+  opacity: 1;
+  margin: 4px 8px 4px 0;
+}
+
+#network {
+  padding-left: 11px;
+  padding-right: 16px;
+}
+
+#network:hover {
+  background-color: @fg-light;
+  color: @green;
+}
+
+#network.disabled {
+  color: @orange;
+  background-color: whitesmoke;
+}
+
+#network.disconnected {
+  color: @red;
+  background-color: @light-green;
+}
+
+#pulseaudio {
+  font-size: 14px;
+  padding-left: 11px;
+  padding-right: 14px;
+}
+
+#pulseaudio:hover {
+  background-color: @fg-light;
+  color: @green;
+}
+
+#pulseaudio.muted {
+  color: @light-red;
+  background-color: @light-green;
+}
+
+#battery {
+  font-size: 13.5px;
+  padding-left: 12px;
+  padding-right: 12.5px;
+}
+
+#battery:hover {
+  background-color: @fg-light;
+  color: @green;
+}
+
+#battery.charging {
+  color: @light-green;
+}
+
+#battery.warning:not(.charging) {
+  color: @light-yellow;
+}
+
+#battery.warning:not(.charging):hover {
+  color: @yellow;
+  background-color: whitesmoke;
+}
+
+#battery.critical:not(.charging) {
+  color: @light-red;
+  background-color: @light-green;
+}
+
+#battery.critical:not(.charging):hover {
+  color: @red;
+  background-color: @green;
+}
+
+#backlight {
+  padding-left: 11px;
+  padding-right: 13.5px;
+}
+
+#backlight:hover {
+  background-color: @fg-light;
+  color: @green
+}
+
+#custom-notification {
+  font-size: 14px;
+  padding-left: 10px;
+  padding-right: 13px;
+}
+
+#custom-notification:hover {
+  background-color: @fg-light;
+  color: @green;
+}
+
+#custom-power {
+  padding-left: 11px;
+  padding-right: 13px;
+}
+
+#custom-power:hover {
+  background-color: @red;
+  color: @fg-dark;
+}
+
+#clock {
+  color: @light-green;
+  border-radius: 14px;
+  padding: 3px 4px 3px 9px;
+  border: none;
+  background-color: @bg-light;
+  opacity: 1;
+  margin: 4px 6px 4px 0;
+}
+
+#clock:hover {
+  color: @light-yellow;
+}

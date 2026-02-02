@@ -1,0 +1,7 @@
+[global]
+# // --  Display time in milliseconds (default is 2000ms = 2 seconds) -- //
+display_time = 4000
+
+# // --  Fade in/out duration in milliseconds --
+fade_in_time = 800
+fade_out_time = 3000

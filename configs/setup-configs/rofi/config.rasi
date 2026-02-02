@@ -1,0 +1,233 @@
+/* // -- General configuration -- // */
+
+configuration {
+	modi:                       ["drun", "run", "window"];
+    show-icons:                 true;
+    display-drun:               "󰣆 ";
+    display-run:                "";
+    display-window:             "";
+	drun-display-format:        "    {name}";
+}
+
+/* // -- Imported configuration -- // */
+
+@import                          "shared/colors.rasi"
+@import                          "shared/fonts.rasi"
+
+/* // -- Rofi's window configuration -- // */
+
+window {
+    /* // properties for rofi window // */
+    transparency:                "real";
+    location:                    center;
+    anchor:                      center;
+    fullscreen:                  false;
+    width:                       800px;
+    x-offset:                    0px;
+    y-offset:                    0px;
+    /* // properties for visuals of rofi // */
+    enabled:                     true;
+    margin:                      0px;
+    padding:                     0px;
+    border:                      2px solid;
+    border-radius:               15px;
+    border-color:                @border;
+    cursor:                      "default";
+    background-color:            @background;
+}
+
+/* // -- Mainbox of window's configuration -- // */
+
+mainbox {
+    enabled:                     true;
+    spacing:                     10px;
+    margin:                      0px;
+    padding:                     30px;
+    background-color:            transparent;
+    children:                    [ "inputbar", "message", "listview", "mode-switcher" ];
+}
+
+
+/* // -- Inputbar configuration -- // */
+
+inputbar {
+    enabled:                     true;
+    spacing:                     10px;
+    margin:                      0px 0px 4px 0;
+    padding:                     10px;
+    border:                      0px 2px 2px 0px;
+    border-radius:               10px;
+    border-color:                @selected;
+    background-color:            @background-alt;
+    text-color:                  @foreground;
+    children:                    [ "textbox-prompt-colon", "entry" ];
+}
+
+prompt {
+    enabled:                     true;
+    background-color:            inherit;
+    text-color:                  inherit;
+}
+
+textbox-prompt-colon {
+    enabled:                     true;
+    padding:                     0px;
+    expand:                      false;
+    str:                         "    ";
+    background-color:            inherit;
+    text-color:                  inherit;
+}
+
+entry {
+    enabled:                     true;
+    padding:                     0px;
+    background-color:            inherit;
+    text-color:                  inherit;
+    cursor:                      text;
+    placeholder:                 "Search...";
+    placeholder-color:           inherit;
+}
+
+/* // -- listview configuration -- // */
+
+listview {
+    enabled:                     true;
+    columns:                     2;
+    lines:                       7;
+    cycle:                       true;
+    dynamic:                     true;
+    scrollbar:                   false;
+    layout:                      vertical;
+    reverse:                     false;
+    fixed-height:                false;
+    fixed-columns:               false;
+    spacing:                     5px;
+    background-color:            transparent;
+    text-color:                  @foreground;
+    cursor:                      "default";
+    border:                      0;
+}
+
+scrollbar {
+    handle-width:                5px ;
+    handle-color:                @selected;
+    border-radius:               10px;
+    background-color:            @background-alt;
+}
+
+/* // -- Configuration for elements -- // */
+
+element {
+    enabled:                     true;
+    spacing:                     10px;
+    margin:                      0px;
+    padding:                     6px;
+    border-radius:               0px;
+    background-color:            transparent;
+    text-color:                  @foreground;
+    cursor:                      pointer;
+}
+
+element normal.normal,
+element alternate.normal {
+    background-color:            @background;
+    text-color:                  @foreground;
+}
+
+element normal.urgent,
+element alternate.urgent,
+element selected.active {
+    background-color:            @background;
+    text-color:                  @foreground;
+    border:                      0px 2px 2px 0px;
+    border-radius:               10px;
+    border-color:                @selected;
+}
+
+element normal.active,
+element alternate.active,
+element selected.urgent {
+    background-color:            @background;
+    text-color:                  @foreground;
+    border:                      2px;
+    border-color:                @urgent;
+}
+
+element selected.normal {
+    background-color:            @background;
+    text-color:                  @selected;
+    border:                      0px 2px 2px 0px;
+    border-radius:               10px;
+    border-color:                @selected;
+}
+
+element-icon {
+    background-color:            transparent;
+    text-color:                  inherit;
+    size:                        24px;
+    cursor:                      inherit;
+}
+
+element-text {
+    background-color:            transparent;
+    text-color:                  inherit;
+    highlight:                   inherit;
+    cursor:                      inherit;
+    vertical-align:              0.5;
+    horizontal-align:            0.0;
+}
+
+/* // -- Configuration for mode-switcher -- // */
+
+mode-switcher{
+    enabled:                     true;
+    spacing:                     10px;
+    margin:                      0px;
+    padding:                     0px 250px;
+    background-color:            transparent;
+    text-color:                  @foreground;
+}
+
+button {
+    padding:                     10px;
+    border-radius:               10px;
+    background-color:            @background-alt;
+    text-color:                  inherit;
+    cursor:                      pointer;
+}
+
+button selected {
+    background-color:            @background;
+    text-color:                  @urgent;
+    border:                      0px 2px 2px 0px;
+    border-radius:               10px;
+    border-color:                @urgent;
+}
+
+/* // -- Configuration for message-box -- // */
+
+message {
+    enabled:                     true;
+    margin:                      0px;
+    padding:                     10px;
+    border-radius:               0px;
+    background-color:            @background-alt;
+    text-color:                  @foreground;
+}
+
+textbox {
+    background-color:            transparent;
+    text-color:                  @foreground;
+    vertical-align:              0.5;
+    horizontal-align:            0.0;
+    highlight:                   none;
+    placeholder-color:           @foreground;
+    blink:                       true;
+    markup:                      true;
+}
+
+error-message {
+    padding:                     30px;
+    background-color:            @background;
+    text-color:                  @foreground;
+}

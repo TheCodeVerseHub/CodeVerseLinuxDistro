@@ -1,0 +1,6 @@
+/* // -- Fonts for rofi -- // */
+
+* {
+    font: "JetBrainsMono Nerd Font 12";
+}
+

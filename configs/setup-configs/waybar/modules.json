@@ -1,0 +1,109 @@
+{
+  "niri/workspaces": {
+    "format": "{index}",
+  },
+
+  "niri/window": {
+    "format":"{title} ",
+    "icon": true,
+    "icon-size": 18,
+    "tooltip": false,
+    "separate-outputs": true
+  },
+
+  "clock": {
+    "format": "{:%I:%M %p %a %d}  ",
+    "format-alt": "{:%A, %B %d, %Y (%R)} ",
+    "tooltip-format": "<tt><small>{calendar}</small></tt>",
+    "interval": 60,
+    "calendar": {
+        "mode": "year",
+        "mode-mon-col": 3,
+        "weeks-pos": "right",
+        "on-scroll": 1,
+    },
+    "actions": {
+        "on-click-right": "mode",
+        "on-scroll-up": "shift_up",
+        "on-scroll-down": "shift_down",
+     },
+  },
+
+  "battery": {
+    "states": {
+      "idle": 40,
+      "warning": 20,
+      "critical": 1,
+    },
+    "format": "{icon}",
+    "format-charging": "󰂄",
+    "format-plugged": "󰚥",
+    "tooltip-format": "{capacity}% - {time}",
+    "format-icons": ["󰁻", "󰁽", "󰁾", "󰂂", "󰁹"],
+    "interval": 60,
+    "on-click": "~/.config/rofi/scripts/rofi-battery-power-menu.sh"
+  },
+
+  "network": {
+    "format": "",
+    "format-wifi": "",
+    "format-ethernet": "󰈁",
+    "format-disconnected": "󰖪",
+    "tooltip-format-wifi": "{essid} ({signalStrength}%)",
+    "tooltip-format-ethernet": "{ifname}",
+    "tooltip-format-disconnected": "Disconnected",
+    "on-click": "~/.config/rofi/scripts/rofi-wifi-menu.sh"
+  },
+
+  "pulseaudio": {
+    "format": "{icon}",
+    "format-muted": "󰖁",
+    "tooltip-format": "{volume}%",
+    "format-icons": {
+        "default": ["󰝟","󰕿","",""],
+    },
+    "on-click": "~/.config/rofi/scripts/rofi-volume-selector.sh",
+    "on-scroll-up": "pactl set-sink-volume @DEFAULT_SINK@ +5%",
+    "on-scroll-down": "pactl set-sink-volume @DEFAULT_SINK@ -5%"
+  },
+
+ "backlight": {
+    "format": "{icon}",
+    "device": "intel_backlight",
+    "tooltip-format": "{percent}%",
+    "format-icons": ["", "", "", "", "", "", "", "", ""],
+    "on-scroll-down": "brightnessctl -c backlight set 5%-",
+    "on-scroll-up": "brightnessctl -c backlight set +5%",
+    "on-click": "~/.config/rofi/scripts/rofi-brightness-selector.sh"
+  },
+
+  "custom/notification": {
+    "tooltip": true,
+    "tooltip-format": "Open Notication History",
+    "format": "{icon}",
+    "format-icons": {
+        "notification": "󰂝",
+        "none": "󰂚",
+        "dnd-notification": "󰂠",
+        "dnd-none": "󰂛"
+    },
+    "return-type": "json",
+    "exec-if": "which swaync-client",
+    "exec": "swaync-client -swb",
+    "on-click": "swaync-client -t -sw",
+    "on-click-right": "~/.config/rofi/scripts/rofi-notification-menu.sh",
+    "escape": true
+  },
+
+  "custom/power": {
+    "format": "⏻",
+    "on-click": "~/.config/rofi/scripts/rofi-powermenu.sh",
+    "tooltip-format": "Power Menu",
+  },
+
+  "custom/launcher": {
+    "format": "",
+    "on-click": "rofi -show codeverse -modi 'codeverse:~/.config/rofi/scripts/codeverse-menu.sh'",
+    "tooltip-format": "Codeverse Menu",
+  }
+}

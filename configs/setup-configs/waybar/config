@@ -1,0 +1,24 @@
+{
+  "layer": "top",
+  "position": "bottom",
+
+  "modules-left": [
+    "custom/launcher",
+    "niri/window",
+  ],
+
+  "modules-center": ["niri/workspaces"],
+
+  "modules-right": [
+    "network",
+    "pulseaudio",
+    "battery",
+    "backlight",
+    "custom/notification",
+    "custom/power",
+    "clock",
+  ],
+
+  // This loads modules for waybar
+  "include": ["~/.config/waybar/modules.json"],
+}

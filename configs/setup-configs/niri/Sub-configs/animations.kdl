@@ -1,0 +1,13 @@
+// The wiki explains how to configure individual animations:
+// https://yalter.github.io/niri/Configuration:-Animations
+
+// Currently no animations are being added as of early release of codeverse linux.
+// You can add your own by referring to the wiki link mentioned at the top.
+
+animations {
+    // Uncomment to turn off all animations.
+    // off
+
+    // Slow down all animations by this factor. Values below 1 speed them up instead.
+    // slowdown 3.0
+}

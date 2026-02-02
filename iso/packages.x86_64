@@ -36,7 +36,6 @@ dbus
 grub
 efibootmgr
 os-prober
-syslinux
 
 # =============================================================================
 # FILESYSTEM UTILITIES
@@ -65,6 +64,8 @@ less
 which
 man-db
 man-pages
+libnotify
+reflector
 
 # =============================================================================
 # COMPRESSION
@@ -82,7 +83,6 @@ unzip
 # =============================================================================
 networkmanager
 iwd
-dhcpcd
 openssh
 curl
 wget
@@ -111,6 +111,7 @@ wayland-protocols
 xorg-xwayland
 qt5-wayland
 qt6-wayland
+xwayland-satellite
 
 # =============================================================================
 # NIRI COMPOSITOR AND DEPENDENCIES
@@ -148,17 +149,20 @@ zsh-completions
 zsh-syntax-highlighting
 zsh-autosuggestions
 zsh-history-substring-search
+fzf-zsh-plugin
 
 # =============================================================================
 # TERMINAL EMULATOR
 # =============================================================================
-foot
+kitty
 
 # =============================================================================
 # FONTS
 # =============================================================================
 noto-fonts
 noto-fonts-emoji
+ttf-jetbrains-mono-nerd
+ttf-nerd-fonts-symbols
 ttf-dejavu
 ttf-liberation
 ttf-fira-code
@@ -166,7 +170,6 @@ ttf-fira-code
 # =============================================================================
 # SYSTEM UTILITIES
 # =============================================================================
-htop
 btop
 tree
 fastfetch
@@ -174,17 +177,24 @@ fastfetch
 # =============================================================================
 # FILE MANAGEMENT
 # =============================================================================
-nnn
+nautilus
 
 # =============================================================================
 # WAYLAND UTILITIES
 # =============================================================================
-fuzzel
-mako
+rofi
 grim
 slurp
 wl-clipboard
+swaync
+swayosd
+cliphist
 brightnessctl
+wf-recorder
+mpvpaper
+waybar
+polkit-gnome
+gnome-keyring
 
 # =============================================================================
 # SANDBOXING (for cvh-icons)
@@ -204,3 +214,23 @@ pkgconf
 cvh-fuzzy
 cvh-icons
 cvh-branding
+
+# =============================================================================
+# DEFAULT APPLICATIONS
+# =============================================================================
+zed
+neovim
+celluloid
+transmission-gtk
+evince
+loupe
+file-roller
+nwg-look
+tangram
+
+# =============================================================================
+# MISCELLANEOUS STUFF THAT IS NOT ON PACMAN
+# =============================================================================
+# ---  Brave browser, requires AUR ( yay -S brave-bin ) ---
+# --- Oh my zsh, requires to be installed by running this in the terminal:
+# sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" ---

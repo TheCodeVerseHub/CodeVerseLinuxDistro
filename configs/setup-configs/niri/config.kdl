@@ -1,0 +1,35 @@
+// This config is in the KDL format: https://kdl.dev
+// "/-" comments out the following node.
+// Check the wiki for a full description of the configuration:
+// https://yalter.github.io/niri/Configuration:-Introduction
+
+// !! Mod is equal to super key i.e: windows key !!
+
+// Here "include" keyword is used to link different parts of config to this main config
+// To keep the whole config more manageable and clean
+// For more information about "include" keyword:
+// Wiki: https://yalter.github.io/niri/Configuration%3A-Include.html
+
+// Include general config files
+include "Sub-configs/inputs.kdl"
+include "Sub-configs/outputs.kdl"
+include "Sub-configs/layout.kdl"
+include "Sub-configs/window-rules.kdl"
+include "Sub-configs/named-workspaces.kdl"
+include "Sub-configs/animations.kdl"
+include "Sub-configs/startup-processes.kdl"
+include "Sub-configs/miscellaneous.kdl"
+
+// Include keybind files
+include "Keybindings/app-keybinds.kdl"
+include "Keybindings/shell-keybinds.kdl"
+include "Keybindings/rofi-keybinds.kdl"
+include "Keybindings/media-keybinds.kdl"
+include "Keybindings/window-navigation-keybinds.kdl"
+include "Keybindings/workspace-navigation-keybinds.kdl"
+include "Keybindings/mouse-navigation-keybinds.kdl"
+include "Keybindings/general-workspace-keybinds.kdl"
+include "Keybindings/general-window-keybinds.kdl"
+include "Keybindings/miscellaneous-keybinds.kdl"
+
+// -- Config made by MHIA ( Github: MHashir09 ) -- //

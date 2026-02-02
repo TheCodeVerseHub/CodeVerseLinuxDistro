@@ -1,0 +1,65 @@
+// Wiki: https://yalter.github.io/niri/Configuration%3A-Key-Bindings.html
+
+binds {
+    // Open/close the Overview: a zoomed-out view of workspaces and windows.
+    // You can also move the mouse into the top-left hot corner,
+    // or do a four-finger swipe up on a touchpad.
+    Mod+O repeat=false { toggle-overview; }
+
+    // Close windows
+    Mod+Q repeat=false { close-window; }
+
+    // Navigating between windows
+    Alt+H     { focus-column-left; }
+    Alt+J     { focus-window-down; }
+    Alt+K     { focus-window-up; }
+    Alt+L     { focus-column-right; }
+
+    // Moving windows
+    Alt+Ctrl+H     { move-column-left; }
+    Alt+Ctrl+J     { move-window-down; }
+    Alt+Ctrl+K     { move-window-up; }
+    Alt+Ctrl+L     { move-column-right; }
+
+    // Alternative commands that move across workspaces when reaching
+    // the first or last window in a column.
+    // Alt+J     { focus-window-or-workspace-down; }
+    // Alt+K     { focus-window-or-workspace-up; }
+    // Alt+Ctrl+J     { move-window-down-or-to-workspace-down; }
+    // Alt+Ctrl+K     { move-window-up-or-to-workspace-up; }
+
+    // Focus or move to first or last windows
+    Alt+Home { focus-column-first; }
+    Alt+End  { focus-column-last; }
+    Alt+Ctrl+Home { move-column-to-first; }
+    Alt+Ctrl+End  { move-column-to-last; }
+
+    // Monitor specific binds for window-navigation
+    // I have only one monitor so I am commenting these.
+    // But you can uncomment and set accordingly if you have
+    // Multiple monitors.
+//    Mod+Shift+Left  { focus-monitor-left; }
+//    Mod+Shift+Down  { focus-monitor-down; }
+//    Mod+Shift+Up    { focus-monitor-up; }
+//    Mod+Shift+Right { focus-monitor-right; }
+//    Mod+Shift+H     { focus-monitor-left; }
+//    Mod+Shift+J     { focus-monitor-down; }
+//    Mod+Shift+K     { focus-monitor-up; }
+//    Mod+Shift+L     { focus-monitor-right; }
+
+//    Mod+Shift+Ctrl+Left  { move-column-to-monitor-left; }
+//    Mod+Shift+Ctrl+Down  { move-column-to-monitor-down; }
+//    Mod+Shift+Ctrl+Up    { move-column-to-monitor-up; }
+//    Mod+Shift+Ctrl+Right { move-column-to-monitor-right; }
+//    Mod+Shift+Ctrl+H     { move-column-to-monitor-left; }
+//    Mod+Shift+Ctrl+J     { move-column-to-monitor-down; }
+//    Mod+Shift+Ctrl+K     { move-column-to-monitor-up; }
+//    Mod+Shift+Ctrl+L     { move-column-to-monitor-right; }
+
+    // Alternatively, there are commands to move just a single window:
+    // Mod+Shift+Ctrl+Left  { move-window-to-monitor-left; }
+    // ...
+
+    // And you can also move a whole workspace to another monitor:
+    // Mod+Shift+Ctrl+Left  { move-workspace-to-monitor-left; }
+}

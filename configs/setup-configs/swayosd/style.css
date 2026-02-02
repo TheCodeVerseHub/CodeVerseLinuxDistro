@@ -1,0 +1,31 @@
+/* // -- SwayOSD Gruvbox Theme -- // */
+
+/* // -- Main window -- // */
+window {
+    background: rgba(40, 40, 40, 0.95);
+    border: 1px solid rgba(235, 219, 178, 0.8);
+    padding-left: 30px;
+    padding-right: 30px;
+}
+
+/* // -- Progress bar container -- // */
+progressbar {
+    background: rgba(60, 56, 54, 0.8);
+}
+
+/* // -- Progress bar fill  -- // */
+progress {
+    background: linear-gradient(to right,
+                rgba(184, 187, 38, 1.0),
+                rgba(250, 189, 47, 1.0));
+}
+
+/* // -- Icon  -- // */
+image {
+    color: rgba(235, 219, 178, 1.0);
+}
+
+/* // -- Label text -- // */
+label {
+    color: rgba(235, 219, 178, 1.0);
+}
