@@ -150,7 +150,6 @@ zsh-completions
 zsh-syntax-highlighting
 zsh-autosuggestions
 zsh-history-substring-search
-fzf-zsh-plugin
 
 # =============================================================================
 # TERMINAL EMULATOR
@@ -219,7 +218,7 @@ cvh-branding
 # =============================================================================
 # AUR PACKAGES (pre-built in cvh-linux repo)
 # =============================================================================
-# mpvpaper and fzf-zsh-plugin are already in the list above
+# mpvpaper is listed above in WAYLAND UTILITIES
 
 # =============================================================================
 # DEFAULT APPLICATIONS

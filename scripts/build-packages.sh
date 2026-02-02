@@ -356,7 +356,6 @@ build_aur_packages() {
 
     local aur_packages=(
         "mpvpaper"
-        "fzf-zsh-plugin"
     )
 
     for pkg in "${aur_packages[@]}"; do

@@ -6,7 +6,7 @@ xdata = pkgtype=pkg
 pkgver = 0.1.0-1
 pkgdesc = Universal fuzzy finder for CVH Linux
 url = https://github.com/codeversehub/cvh-linux
-builddate = 1770005032
+builddate = 1770007771
 packager = Unknown Packager
 size = 1371945
 arch = x86_64
