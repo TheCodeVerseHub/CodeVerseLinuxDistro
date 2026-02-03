@@ -124,8 +124,6 @@ alias gc="git commit"
 alias gp="git push"
 alias gs="git status"
 
-
 export PATH="$HOME/.spicetify:$PATH"
 export PATH=$HOME/.local/bin:$PATH
 export PATH="$HOME/bin:$PATH"
-. "/home/mhia/.deno/env"
