@@ -8,7 +8,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 PROFILE_DIR="$PROJECT_ROOT/iso"
-WORK_DIR="${WORK_DIR:-/tmp/cvh-build}"
+WORK_DIR="${WORK_DIR:-$PROJECT_ROOT/.build}"
 OUT_DIR="$PROJECT_ROOT/out"
 
 # Colors
@@ -83,19 +83,102 @@ prepare_profile() {
         log_warn "GRUB theme not found at $theme_src"
     fi
 
-    # Sync niri config from configs to ISO skel (including wallpapers)
-    local niri_src="$PROJECT_ROOT/configs/setup-configs/niri"
-    local niri_dest="$WORK_DIR/profile/airootfs/etc/skel/.config/niri"
+    # Sync all setup configs from configs/setup-configs to ISO skel
+    local setup_src="$PROJECT_ROOT/configs/setup-configs"
+    local skel_dest="$WORK_DIR/profile/airootfs/etc/skel"
 
-    if [[ -d "$niri_src" ]]; then
-        log_info "Syncing niri configuration..."
-        mkdir -p "$niri_dest"
-        cp -r "$niri_src"/* "$niri_dest/"
-        # Make scripts executable
-        chmod +x "$niri_dest/scripts/"*.sh 2>/dev/null || true
-        log_success "Niri config synced to ISO profile"
+    if [[ -d "$setup_src" ]]; then
+        log_info "Syncing setup configurations to ISO skel..."
+
+        # Niri config -> ~/.config/niri
+        if [[ -d "$setup_src/niri" ]]; then
+            mkdir -p "$skel_dest/.config/niri"
+            cp -r "$setup_src/niri"/* "$skel_dest/.config/niri/"
+            chmod +x "$skel_dest/.config/niri/scripts/"*.sh 2>/dev/null || true
+            log_success "  Niri config synced"
+        fi
+
+        # GTK configs -> ~/.config/gtk-3.0 and ~/.config/gtk-4.0
+        if [[ -d "$setup_src/gtk-configs" ]]; then
+            for gtk_ver in gtk-3.0 gtk-4.0; do
+                if [[ -d "$setup_src/gtk-configs/$gtk_ver" ]]; then
+                    mkdir -p "$skel_dest/.config/$gtk_ver"
+                    cp -r "$setup_src/gtk-configs/$gtk_ver"/* "$skel_dest/.config/$gtk_ver/"
+                fi
+            done
+            log_success "  GTK configs synced"
+        fi
+
+        # Kitty config -> ~/.config/kitty
+        if [[ -d "$setup_src/kitty" ]]; then
+            mkdir -p "$skel_dest/.config/kitty"
+            cp -r "$setup_src/kitty"/* "$skel_dest/.config/kitty/"
+            log_success "  Kitty config synced"
+        fi
+
+        # Rofi config -> ~/.config/rofi
+        if [[ -d "$setup_src/rofi" ]]; then
+            mkdir -p "$skel_dest/.config/rofi"
+            cp -r "$setup_src/rofi"/* "$skel_dest/.config/rofi/"
+            chmod +x "$skel_dest/.config/rofi/scripts/"*.sh 2>/dev/null || true
+            log_success "  Rofi config synced"
+        fi
+
+        # Swaync config -> ~/.config/swaync
+        if [[ -d "$setup_src/swaync" ]]; then
+            mkdir -p "$skel_dest/.config/swaync"
+            cp -r "$setup_src/swaync"/* "$skel_dest/.config/swaync/"
+            log_success "  Swaync config synced"
+        fi
+
+        # SwayOSD config -> ~/.config/swayosd
+        if [[ -d "$setup_src/swayosd" ]]; then
+            mkdir -p "$skel_dest/.config/swayosd"
+            cp -r "$setup_src/swayosd"/* "$skel_dest/.config/swayosd/"
+            log_success "  SwayOSD config synced"
+        fi
+
+        # Waybar config -> ~/.config/waybar
+        if [[ -d "$setup_src/waybar" ]]; then
+            mkdir -p "$skel_dest/.config/waybar"
+            cp -r "$setup_src/waybar"/* "$skel_dest/.config/waybar/"
+            log_success "  Waybar config synced"
+        fi
+
+        # Note: zsh/.zshrc is NOT synced - configure.sh creates a proper .zshrc
+        # with Wayland env vars and compositor auto-start
+
+        # Themes and icons -> ~/.icons and ~/.themes
+        if [[ -d "$setup_src/themes-and-icons" ]]; then
+            if [[ -d "$setup_src/themes-and-icons/.icons" ]]; then
+                mkdir -p "$skel_dest/.icons"
+                cp -r "$setup_src/themes-and-icons/.icons"/* "$skel_dest/.icons/"
+                log_success "  Icons synced"
+            fi
+            if [[ -d "$setup_src/themes-and-icons/.themes" ]]; then
+                mkdir -p "$skel_dest/.themes"
+                cp -r "$setup_src/themes-and-icons/.themes"/* "$skel_dest/.themes/"
+                log_success "  Themes synced"
+            fi
+        fi
+
+        log_success "All setup configs synced to ISO profile"
     else
-        log_warn "Niri config not found at $niri_src"
+        log_warn "Setup configs not found at $setup_src"
+    fi
+
+    # Copy built packages (CVH + AUR) to ISO for offline installation
+    local repo_src="$PROJECT_ROOT/repo/x86_64"
+    local repo_dest="$WORK_DIR/profile/airootfs/opt/cvh-repo"
+
+    if [[ -d "$repo_src" ]] && ls "$repo_src"/*.pkg.tar.zst >/dev/null 2>&1; then
+        log_info "Copying built packages to ISO..."
+        mkdir -p "$repo_dest"
+        cp "$repo_src"/*.pkg.tar.zst "$repo_dest/"
+        local pkg_count=$(ls "$repo_dest"/*.pkg.tar.zst 2>/dev/null | wc -l)
+        log_success "Copied $pkg_count packages to ISO"
+    else
+        log_warn "No built packages found at $repo_src"
     fi
 
     # Make scripts executable
@@ -147,7 +230,7 @@ usage() {
     echo "  -n, --no-pkg     Skip building custom packages"
     echo
     echo "Environment variables:"
-    echo "  WORK_DIR         Build work directory (default: /tmp/cvh-build)"
+    echo "  WORK_DIR         Build work directory (default: \$PROJECT_ROOT/.build)"
     echo
 }
 

@@ -23,6 +23,9 @@ configure_system() {
     create_mirrorlist
     configure_pacman_repos
 
+    # Copy skel configs from live ISO to installed system
+    copy_skel_configs
+
     # Write the chroot configuration script
     write_chroot_script
 
@@ -47,6 +50,33 @@ configure_system() {
     install_grub
 
     gum style --foreground 82 "  ✓ System configured"
+}
+
+# Copy skel configs from live ISO to installed system
+copy_skel_configs() {
+    gum style --foreground 6 "  ● Copying configuration files from ISO..."
+
+    # The live ISO's /etc/skel contains all the setup configs synced during ISO build
+    # Copy them to the installed system's /etc/skel so the chroot script can use them
+    if [[ -d /etc/skel/.config ]]; then
+        mkdir -p /mnt/etc/skel/.config
+        cp -r /etc/skel/.config/* /mnt/etc/skel/.config/ 2>/dev/null || true
+        gum style --foreground 82 "  ✓ Config files copied (.config)"
+    fi
+
+    # Copy icons
+    if [[ -d /etc/skel/.icons ]]; then
+        mkdir -p /mnt/etc/skel/.icons
+        cp -r /etc/skel/.icons/* /mnt/etc/skel/.icons/ 2>/dev/null || true
+        gum style --foreground 82 "  ✓ Icons copied"
+    fi
+
+    # Copy themes
+    if [[ -d /etc/skel/.themes ]]; then
+        mkdir -p /mnt/etc/skel/.themes
+        cp -r /etc/skel/.themes/* /mnt/etc/skel/.themes/ 2>/dev/null || true
+        gum style --foreground 82 "  ✓ Themes copied"
+    fi
 }
 
 # Write the chroot configuration script
@@ -122,7 +152,7 @@ if ls /var/cache/pacman/cvh-packages/*.pkg.tar.zst >/dev/null 2>&1; then
 
     # Verify installation
     echo "Verifying CVH packages:"
-    for pkg in cvh-fuzzy cvh-icons cvh-branding; do
+    for pkg in cvh-fuzzy cvh-icons cvh-branding mpvpaper; do
         if pacman -Q \$pkg >/dev/null 2>&1; then
             echo "  ✓ \$pkg installed"
         else
@@ -193,13 +223,35 @@ chmod 440 /etc/sudoers.d/wheel
 su - $USERNAME -c 'git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git ~/.oh-my-zsh 2>/dev/null' || true
 su - $USERNAME -c 'cp ~/.oh-my-zsh/templates/zshrc.zsh-template ~/.zshrc 2>/dev/null' || true
 
-# Set up niri compositor config
-su - $USERNAME -c 'mkdir -p ~/.config/niri'
-# Copy niri config from /etc/skel (synced during ISO build)
-if [[ -d /etc/skel/.config/niri ]]; then
-    cp -r /etc/skel/.config/niri/* /home/$USERNAME/.config/niri/
+# Copy all config directories from /etc/skel to user home
+echo "Setting up user configurations..."
+if [[ -d /etc/skel/.config ]]; then
+    mkdir -p /home/$USERNAME/.config
+    cp -r /etc/skel/.config/* /home/$USERNAME/.config/ 2>/dev/null || true
+    chown -R $USERNAME:$USERNAME /home/$USERNAME/.config
+    echo "  ✓ Config directories copied"
 fi
-chown -R $USERNAME:$USERNAME /home/$USERNAME/.config/niri
+
+# Copy icons from /etc/skel
+if [[ -d /etc/skel/.icons ]]; then
+    mkdir -p /home/$USERNAME/.icons
+    cp -r /etc/skel/.icons/* /home/$USERNAME/.icons/ 2>/dev/null || true
+    chown -R $USERNAME:$USERNAME /home/$USERNAME/.icons
+    echo "  ✓ Icons copied"
+fi
+
+# Copy themes from /etc/skel
+if [[ -d /etc/skel/.themes ]]; then
+    mkdir -p /home/$USERNAME/.themes
+    cp -r /etc/skel/.themes/* /home/$USERNAME/.themes/ 2>/dev/null || true
+    chown -R $USERNAME:$USERNAME /home/$USERNAME/.themes
+    echo "  ✓ Themes copied"
+fi
+
+# Make niri scripts executable
+chmod +x /home/$USERNAME/.config/niri/scripts/*.sh 2>/dev/null || true
+# Make rofi scripts executable
+chmod +x /home/$USERNAME/.config/rofi/scripts/*.sh 2>/dev/null || true
 
 # Create Wayland session file for Ly display manager
 mkdir -p /usr/share/wayland-sessions
