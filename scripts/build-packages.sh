@@ -9,7 +9,7 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 PKGBUILD_DIR="$PROJECT_ROOT/pkgbuild"
 SRC_DIR="$PROJECT_ROOT/src"
 REPO_DIR="$PROJECT_ROOT/repo/x86_64"
-GRUB_THEME_DIR="$PROJECT_ROOT/configs/grub/themes/cvh-nordic"
+GRUB_THEME_DIR="$PROJECT_ROOT/configs/grub/themes/tela"
 
 # Colors
 RED='\033[0;31m'
@@ -32,77 +32,61 @@ check_rust() {
     log_success "Rust toolchain found"
 }
 
-# Generate GRUB theme assets
+# Download and setup Tela GRUB theme
 generate_grub_theme() {
-    log_info "Generating GRUB theme assets..."
+    log_info "Setting up Tela GRUB theme..."
 
-    # Check for ImageMagick
-    if ! command -v convert &> /dev/null; then
-        log_warn "ImageMagick not found, skipping theme generation"
-        log_warn "Install with: sudo pacman -S imagemagick"
-        return 0
+    local GRUB2_THEMES_REPO="https://github.com/vinceliuice/grub2-themes.git"
+    local TEMP_DIR="$PROJECT_ROOT/.grub-themes-temp"
+
+    # Clean up any existing temp directory
+    rm -rf "$TEMP_DIR"
+
+    # Clone the grub2-themes repository
+    log_info "  Cloning grub2-themes repository..."
+    if ! git clone --depth=1 "$GRUB2_THEMES_REPO" "$TEMP_DIR" 2>/dev/null; then
+        log_error "Failed to clone grub2-themes repository"
+        return 1
     fi
 
+    # Create theme directory
+    rm -rf "$GRUB_THEME_DIR"
     mkdir -p "$GRUB_THEME_DIR/icons"
 
-    # Nord colors
-    local NORD0="#2E3440"  # Polar Night (darkest)
-    local NORD1="#3B4252"  # Polar Night
-    local NORD3="#4C566A"  # Polar Night (lightest)
-    local NORD4="#D8DEE9"  # Snow Storm
-    local NORD8="#88C0D0"  # Frost (cyan)
+    # Copy Tela theme files (1080p, color icons)
+    log_info "  Extracting Tela theme (1080p, color icons)..."
 
-    # Generate background (1920x1080 with subtle gradient)
-    log_info "  Creating background.png..."
-    convert -size 1920x1080 \
-        -define gradient:direction=south \
-        gradient:"$NORD0"-"$NORD1" \
-        "$GRUB_THEME_DIR/background.png"
+    # Copy background
+    if [[ -f "$TEMP_DIR/backgrounds/1080p/background-tela.jpg" ]]; then
+        cp "$TEMP_DIR/backgrounds/1080p/background-tela.jpg" "$GRUB_THEME_DIR/background.jpg"
+    fi
 
-    # Generate menu icons (32x32)
-    log_info "  Creating menu icons..."
+    # Copy theme.txt from common and customize for tela
+    if [[ -f "$TEMP_DIR/common/theme.txt" ]]; then
+        cp "$TEMP_DIR/common/theme.txt" "$GRUB_THEME_DIR/theme.txt"
+        # Update background reference to jpg
+        sed -i 's/background\.png/background.jpg/g' "$GRUB_THEME_DIR/theme.txt"
+    fi
 
-    # Linux icon (simple penguin silhouette approximation)
-    convert -size 32x32 xc:transparent \
-        -fill "$NORD4" \
-        -draw "circle 16,12 16,4" \
-        -draw "roundrectangle 8,14 24,28 4,4" \
-        "$GRUB_THEME_DIR/icons/linux.png"
+    # Copy icons (color variant)
+    if [[ -d "$TEMP_DIR/assets/assets-tela/icons-1080p/color" ]]; then
+        cp "$TEMP_DIR/assets/assets-tela/icons-1080p/color"/*.png "$GRUB_THEME_DIR/icons/" 2>/dev/null || true
+    fi
 
-    # CVH/Arch icon
-    convert -size 32x32 xc:transparent \
-        -fill "$NORD8" \
-        -draw "polygon 16,4 28,28 4,28" \
-        -fill "$NORD0" \
-        -draw "polygon 16,14 22,24 10,24" \
-        "$GRUB_THEME_DIR/icons/arch.png"
+    # Copy additional assets (select boxes, etc.)
+    if [[ -d "$TEMP_DIR/assets/assets-tela/icons-1080p" ]]; then
+        cp "$TEMP_DIR/assets/assets-tela/icons-1080p"/*.png "$GRUB_THEME_DIR/" 2>/dev/null || true
+    fi
 
-    cp "$GRUB_THEME_DIR/icons/arch.png" "$GRUB_THEME_DIR/icons/cvh.png"
+    # Copy common assets (progress bar, terminal box, etc.)
+    if [[ -d "$TEMP_DIR/common" ]]; then
+        cp "$TEMP_DIR/common"/*.png "$GRUB_THEME_DIR/" 2>/dev/null || true
+    fi
 
-    # Reboot icon (circular arrow)
-    convert -size 32x32 xc:transparent \
-        -fill "$NORD4" \
-        -stroke "$NORD4" -strokewidth 3 \
-        -draw "arc 6,6 26,26 30,330" \
-        -draw "polygon 24,4 28,10 22,10" \
-        "$GRUB_THEME_DIR/icons/reboot.png"
+    # Clean up temp directory
+    rm -rf "$TEMP_DIR"
 
-    # Shutdown icon (power symbol)
-    convert -size 32x32 xc:transparent \
-        -fill none -stroke "$NORD4" -strokewidth 3 \
-        -draw "arc 8,10 24,26 -60,240" \
-        -draw "line 16,6 16,16" \
-        "$GRUB_THEME_DIR/icons/shutdown.png"
-
-    # UEFI settings icon (gear)
-    convert -size 32x32 xc:transparent \
-        -fill "$NORD4" \
-        -draw "circle 16,16 16,8" \
-        -fill "$NORD0" \
-        -draw "circle 16,16 16,12" \
-        "$GRUB_THEME_DIR/icons/uefi.png"
-
-    log_success "GRUB theme assets generated"
+    log_success "Tela GRUB theme installed"
 }
 
 # Build cvh-fuzzy
@@ -290,25 +274,33 @@ HOME_URL="https://codeversehub.dev"
 DOCUMENTATION_URL="https://github.com/codeversehub/cvh-linux"
 INFOEOF
 
-    # Install GRUB theme
-    install -dm755 "\$pkgdir/usr/share/cvh-linux/grub-theme/cvh-nordic"
-    install -dm755 "\$pkgdir/usr/share/cvh-linux/grub-theme/cvh-nordic/icons"
+    # Install GRUB theme (Tela)
+    install -dm755 "\$pkgdir/usr/share/cvh-linux/grub-theme/tela"
+    install -dm755 "\$pkgdir/usr/share/cvh-linux/grub-theme/tela/icons"
 
     # Copy theme files
-    if [[ -f "\$_cvh_root/configs/grub/themes/cvh-nordic/theme.txt" ]]; then
-        install -Dm644 "\$_cvh_root/configs/grub/themes/cvh-nordic/theme.txt" \\
-            "\$pkgdir/usr/share/cvh-linux/grub-theme/cvh-nordic/theme.txt"
+    if [[ -f "\$_cvh_root/configs/grub/themes/tela/theme.txt" ]]; then
+        install -Dm644 "\$_cvh_root/configs/grub/themes/tela/theme.txt" \\
+            "\$pkgdir/usr/share/cvh-linux/grub-theme/tela/theme.txt"
     fi
 
-    if [[ -f "\$_cvh_root/configs/grub/themes/cvh-nordic/background.png" ]]; then
-        install -Dm644 "\$_cvh_root/configs/grub/themes/cvh-nordic/background.png" \\
-            "\$pkgdir/usr/share/cvh-linux/grub-theme/cvh-nordic/background.png"
+    # Copy background (Tela uses .jpg)
+    if [[ -f "\$_cvh_root/configs/grub/themes/tela/background.jpg" ]]; then
+        install -Dm644 "\$_cvh_root/configs/grub/themes/tela/background.jpg" \\
+            "\$pkgdir/usr/share/cvh-linux/grub-theme/tela/background.jpg"
     fi
+
+    # Copy all theme assets (select boxes, progress bars, etc.)
+    for asset in "\$_cvh_root/configs/grub/themes/tela"/*.png; do
+        if [[ -f "\$asset" ]]; then
+            install -Dm644 "\$asset" "\$pkgdir/usr/share/cvh-linux/grub-theme/tela/\$(basename \$asset)"
+        fi
+    done
 
     # Copy icons
-    for icon in "\$_cvh_root/configs/grub/themes/cvh-nordic/icons"/*.png; do
+    for icon in "\$_cvh_root/configs/grub/themes/tela/icons"/*.png; do
         if [[ -f "\$icon" ]]; then
-            install -Dm644 "\$icon" "\$pkgdir/usr/share/cvh-linux/grub-theme/cvh-nordic/icons/\$(basename \$icon)"
+            install -Dm644 "\$icon" "\$pkgdir/usr/share/cvh-linux/grub-theme/tela/icons/\$(basename \$icon)"
         fi
     done
 }

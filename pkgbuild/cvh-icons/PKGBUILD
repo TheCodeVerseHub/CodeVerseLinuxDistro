@@ -10,7 +10,7 @@ depends=('gcc-libs' 'wayland' 'bubblewrap' 'lua')
 makedepends=('rust' 'cargo')
 source=()
 
-_cvh_root="/home/ofek/codeversehubv2distro/CodeVerseLinuxDistro"
+_cvh_root="/home/ofekb/codeversedistro/CodeVerseLinuxDistro"
 
 build() {
     cd "$_cvh_root/src/cvh-icons"

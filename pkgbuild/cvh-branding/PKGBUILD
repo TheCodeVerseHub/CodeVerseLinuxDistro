@@ -9,7 +9,7 @@ license=('GPL3')
 depends=()
 source=()
 
-_cvh_root="/home/ofek/codeversehubv2distro/CodeVerseLinuxDistro"
+_cvh_root="/home/ofekb/codeversedistro/CodeVerseLinuxDistro"
 
 package() {
     # MOTD - welcome message
@@ -36,25 +36,33 @@ HOME_URL="https://codeversehub.dev"
 DOCUMENTATION_URL="https://github.com/codeversehub/cvh-linux"
 INFOEOF
 
-    # Install GRUB theme
-    install -dm755 "$pkgdir/usr/share/cvh-linux/grub-theme/cvh-nordic"
-    install -dm755 "$pkgdir/usr/share/cvh-linux/grub-theme/cvh-nordic/icons"
+    # Install GRUB theme (Tela)
+    install -dm755 "$pkgdir/usr/share/cvh-linux/grub-theme/tela"
+    install -dm755 "$pkgdir/usr/share/cvh-linux/grub-theme/tela/icons"
 
     # Copy theme files
-    if [[ -f "$_cvh_root/configs/grub/themes/cvh-nordic/theme.txt" ]]; then
-        install -Dm644 "$_cvh_root/configs/grub/themes/cvh-nordic/theme.txt" \
-            "$pkgdir/usr/share/cvh-linux/grub-theme/cvh-nordic/theme.txt"
+    if [[ -f "$_cvh_root/configs/grub/themes/tela/theme.txt" ]]; then
+        install -Dm644 "$_cvh_root/configs/grub/themes/tela/theme.txt" \
+            "$pkgdir/usr/share/cvh-linux/grub-theme/tela/theme.txt"
     fi
 
-    if [[ -f "$_cvh_root/configs/grub/themes/cvh-nordic/background.png" ]]; then
-        install -Dm644 "$_cvh_root/configs/grub/themes/cvh-nordic/background.png" \
-            "$pkgdir/usr/share/cvh-linux/grub-theme/cvh-nordic/background.png"
+    # Copy background (Tela uses .jpg)
+    if [[ -f "$_cvh_root/configs/grub/themes/tela/background.jpg" ]]; then
+        install -Dm644 "$_cvh_root/configs/grub/themes/tela/background.jpg" \
+            "$pkgdir/usr/share/cvh-linux/grub-theme/tela/background.jpg"
     fi
+
+    # Copy all theme assets (select boxes, progress bars, etc.)
+    for asset in "$_cvh_root/configs/grub/themes/tela"/*.png; do
+        if [[ -f "$asset" ]]; then
+            install -Dm644 "$asset" "$pkgdir/usr/share/cvh-linux/grub-theme/tela/$(basename $asset)"
+        fi
+    done
 
     # Copy icons
-    for icon in "$_cvh_root/configs/grub/themes/cvh-nordic/icons"/*.png; do
+    for icon in "$_cvh_root/configs/grub/themes/tela/icons"/*.png; do
         if [[ -f "$icon" ]]; then
-            install -Dm644 "$icon" "$pkgdir/usr/share/cvh-linux/grub-theme/cvh-nordic/icons/$(basename $icon)"
+            install -Dm644 "$icon" "$pkgdir/usr/share/cvh-linux/grub-theme/tela/icons/$(basename $icon)"
         fi
     done
 }

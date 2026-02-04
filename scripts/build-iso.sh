@@ -71,8 +71,8 @@ prepare_profile() {
     cp -r "$PROFILE_DIR" "$WORK_DIR/profile"
 
     # Sync GRUB theme from configs to iso directory
-    local theme_src="$PROJECT_ROOT/configs/grub/themes/cvh-nordic"
-    local theme_iso="$PROJECT_ROOT/iso/grub/themes/cvh-nordic"
+    local theme_src="$PROJECT_ROOT/configs/grub/themes/tela"
+    local theme_iso="$PROJECT_ROOT/iso/grub/themes/tela"
 
     if [[ -d "$theme_src" ]]; then
         log_info "Syncing GRUB theme..."

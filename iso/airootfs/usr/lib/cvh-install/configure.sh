@@ -180,16 +180,16 @@ EOF
 sed -i 's/^GRUB_DISTRIBUTOR=.*/GRUB_DISTRIBUTOR="CVH Linux"/' /etc/default/grub 2>/dev/null || \
     echo 'GRUB_DISTRIBUTOR="CVH Linux"' >> /etc/default/grub
 
-# Install CVH Nordic GRUB theme
-if [[ -d /usr/share/cvh-linux/grub-theme/cvh-nordic ]]; then
+# Install Tela GRUB theme
+if [[ -d /usr/share/cvh-linux/grub-theme/tela ]]; then
     echo "Installing GRUB theme..."
     mkdir -p /boot/grub/themes
-    cp -r /usr/share/cvh-linux/grub-theme/cvh-nordic /boot/grub/themes/
+    cp -r /usr/share/cvh-linux/grub-theme/tela /boot/grub/themes/
 
     # Configure GRUB to use the theme
-    sed -i 's|^#*GRUB_THEME=.*|GRUB_THEME="/boot/grub/themes/cvh-nordic/theme.txt"|' /etc/default/grub 2>/dev/null
+    sed -i 's|^#*GRUB_THEME=.*|GRUB_THEME="/boot/grub/themes/tela/theme.txt"|' /etc/default/grub 2>/dev/null
     grep -q '^GRUB_THEME=' /etc/default/grub || \
-        echo 'GRUB_THEME="/boot/grub/themes/cvh-nordic/theme.txt"' >> /etc/default/grub
+        echo 'GRUB_THEME="/boot/grub/themes/tela/theme.txt"' >> /etc/default/grub
     echo "  ✓ GRUB theme installed"
 else
     echo "  ⚠ GRUB theme not found, skipping"

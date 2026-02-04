@@ -88,6 +88,7 @@ openssh
 curl
 wget
 rsync
+ca-certificates
 
 # =============================================================================
 # HARDWARE SUPPORT
