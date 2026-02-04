@@ -40,7 +40,7 @@ INFOEOF
     install -dm755 "$pkgdir/usr/share/cvh-linux/grub-theme/tela"
     install -dm755 "$pkgdir/usr/share/cvh-linux/grub-theme/tela/icons"
 
-    # Copy theme files
+    # Copy theme.txt
     if [[ -f "$_cvh_root/configs/grub/themes/tela/theme.txt" ]]; then
         install -Dm644 "$_cvh_root/configs/grub/themes/tela/theme.txt" \
             "$pkgdir/usr/share/cvh-linux/grub-theme/tela/theme.txt"
@@ -51,6 +51,13 @@ INFOEOF
         install -Dm644 "$_cvh_root/configs/grub/themes/tela/background.jpg" \
             "$pkgdir/usr/share/cvh-linux/grub-theme/tela/background.jpg"
     fi
+
+    # Copy fonts (REQUIRED for GRUB text rendering)
+    for font in "$_cvh_root/configs/grub/themes/tela"/*.pf2; do
+        if [[ -f "$font" ]]; then
+            install -Dm644 "$font" "$pkgdir/usr/share/cvh-linux/grub-theme/tela/$(basename $font)"
+        fi
+    done
 
     # Copy all theme assets (select boxes, progress bars, etc.)
     for asset in "$_cvh_root/configs/grub/themes/tela"/*.png; do

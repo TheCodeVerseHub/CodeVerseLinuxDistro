@@ -38,13 +38,15 @@ generate_grub_theme() {
 
     local GRUB2_THEMES_REPO="https://github.com/vinceliuice/grub2-themes.git"
     local TEMP_DIR="$PROJECT_ROOT/.grub-themes-temp"
+    local RESOLUTION="1080p"
+    local THEME="tela"
 
     # Clean up any existing temp directory
     rm -rf "$TEMP_DIR"
 
     # Clone the grub2-themes repository
     log_info "  Cloning grub2-themes repository..."
-    if ! git clone --depth=1 "$GRUB2_THEMES_REPO" "$TEMP_DIR" 2>/dev/null; then
+    if ! git clone --depth=1 "$GRUB2_THEMES_REPO" "$TEMP_DIR"; then
         log_error "Failed to clone grub2-themes repository"
         return 1
     fi
@@ -53,40 +55,80 @@ generate_grub_theme() {
     rm -rf "$GRUB_THEME_DIR"
     mkdir -p "$GRUB_THEME_DIR/icons"
 
-    # Copy Tela theme files (1080p, color icons)
-    log_info "  Extracting Tela theme (1080p, color icons)..."
+    log_info "  Extracting Tela theme ($RESOLUTION, color icons)..."
 
-    # Copy background
-    if [[ -f "$TEMP_DIR/backgrounds/1080p/background-tela.jpg" ]]; then
-        cp "$TEMP_DIR/backgrounds/1080p/background-tela.jpg" "$GRUB_THEME_DIR/background.jpg"
+    # Copy theme.txt for the correct resolution (from config/ directory)
+    log_info "  Copying theme.txt..."
+    if [[ -f "$TEMP_DIR/config/theme-$RESOLUTION.txt" ]]; then
+        cp "$TEMP_DIR/config/theme-$RESOLUTION.txt" "$GRUB_THEME_DIR/theme.txt"
+        log_success "    theme.txt copied"
+    else
+        log_warn "    theme-$RESOLUTION.txt not found in config/"
     fi
 
-    # Copy theme.txt from common and customize for tela
-    if [[ -f "$TEMP_DIR/common/theme.txt" ]]; then
-        cp "$TEMP_DIR/common/theme.txt" "$GRUB_THEME_DIR/theme.txt"
-        # Update background reference to jpg
-        sed -i 's/background\.png/background.jpg/g' "$GRUB_THEME_DIR/theme.txt"
-    fi
-
-    # Copy icons (color variant)
-    if [[ -d "$TEMP_DIR/assets/assets-tela/icons-1080p/color" ]]; then
-        cp "$TEMP_DIR/assets/assets-tela/icons-1080p/color"/*.png "$GRUB_THEME_DIR/icons/" 2>/dev/null || true
-    fi
-
-    # Copy additional assets (select boxes, etc.)
-    if [[ -d "$TEMP_DIR/assets/assets-tela/icons-1080p" ]]; then
-        cp "$TEMP_DIR/assets/assets-tela/icons-1080p"/*.png "$GRUB_THEME_DIR/" 2>/dev/null || true
-    fi
-
-    # Copy common assets (progress bar, terminal box, etc.)
+    # Copy fonts (REQUIRED for GRUB to display text) from common/
+    log_info "  Copying fonts..."
     if [[ -d "$TEMP_DIR/common" ]]; then
-        cp "$TEMP_DIR/common"/*.png "$GRUB_THEME_DIR/" 2>/dev/null || true
+        cp "$TEMP_DIR/common"/*.pf2 "$GRUB_THEME_DIR/" 2>/dev/null && log_success "    fonts copied" || log_warn "    no fonts found"
+    fi
+
+    # Copy background from backgrounds/{resolution}/
+    log_info "  Copying background..."
+    if [[ -f "$TEMP_DIR/backgrounds/$RESOLUTION/background-$THEME.jpg" ]]; then
+        cp "$TEMP_DIR/backgrounds/$RESOLUTION/background-$THEME.jpg" "$GRUB_THEME_DIR/background.jpg"
+        log_success "    background.jpg copied"
+    else
+        log_warn "    background-$THEME.jpg not found"
+    fi
+
+    # Copy icons (color variant) from assets/assets-color/icons-{resolution}/
+    log_info "  Copying icons..."
+    if [[ -d "$TEMP_DIR/assets/assets-color/icons-$RESOLUTION" ]]; then
+        cp "$TEMP_DIR/assets/assets-color/icons-$RESOLUTION"/*.png "$GRUB_THEME_DIR/icons/" 2>/dev/null && log_success "    icons copied" || log_warn "    no icons found"
+    else
+        log_warn "    icons directory not found"
+    fi
+
+    # Copy selection assets from assets/assets-select/
+    log_info "  Copying selection assets..."
+    if [[ -d "$TEMP_DIR/assets/assets-select" ]]; then
+        cp "$TEMP_DIR/assets/assets-select"/*.png "$GRUB_THEME_DIR/" 2>/dev/null && log_success "    select assets copied" || log_warn "    no select assets found"
+    fi
+
+    # Copy info image from assets/
+    log_info "  Copying info image..."
+    if [[ -f "$TEMP_DIR/assets/info-$RESOLUTION.png" ]]; then
+        cp "$TEMP_DIR/assets/info-$RESOLUTION.png" "$GRUB_THEME_DIR/info.png"
+        log_success "    info.png copied"
+    else
+        log_warn "    info-$RESOLUTION.png not found"
     fi
 
     # Clean up temp directory
     rm -rf "$TEMP_DIR"
 
-    log_success "Tela GRUB theme installed"
+    # Verify essential files exist
+    log_info "  Verifying theme files..."
+    local missing=0
+    for file in theme.txt background.jpg; do
+        if [[ ! -f "$GRUB_THEME_DIR/$file" ]]; then
+            log_error "  Missing essential file: $file"
+            missing=1
+        fi
+    done
+
+    if [[ $missing -eq 0 ]]; then
+        log_success "Tela GRUB theme installed successfully"
+        log_info "  Theme directory: $GRUB_THEME_DIR"
+        log_info "  Contents:"
+        ls -la "$GRUB_THEME_DIR"
+        echo
+        log_info "  Icons:"
+        ls "$GRUB_THEME_DIR/icons" 2>/dev/null | head -5
+    else
+        log_error "Theme installation incomplete - missing essential files"
+        return 1
+    fi
 }
 
 # Build cvh-fuzzy
@@ -278,7 +320,7 @@ INFOEOF
     install -dm755 "\$pkgdir/usr/share/cvh-linux/grub-theme/tela"
     install -dm755 "\$pkgdir/usr/share/cvh-linux/grub-theme/tela/icons"
 
-    # Copy theme files
+    # Copy theme.txt
     if [[ -f "\$_cvh_root/configs/grub/themes/tela/theme.txt" ]]; then
         install -Dm644 "\$_cvh_root/configs/grub/themes/tela/theme.txt" \\
             "\$pkgdir/usr/share/cvh-linux/grub-theme/tela/theme.txt"
@@ -289,6 +331,13 @@ INFOEOF
         install -Dm644 "\$_cvh_root/configs/grub/themes/tela/background.jpg" \\
             "\$pkgdir/usr/share/cvh-linux/grub-theme/tela/background.jpg"
     fi
+
+    # Copy fonts (REQUIRED for GRUB text rendering)
+    for font in "\$_cvh_root/configs/grub/themes/tela"/*.pf2; do
+        if [[ -f "\$font" ]]; then
+            install -Dm644 "\$font" "\$pkgdir/usr/share/cvh-linux/grub-theme/tela/\$(basename \$font)"
+        fi
+    done
 
     # Copy all theme assets (select boxes, progress bars, etc.)
     for asset in "\$_cvh_root/configs/grub/themes/tela"/*.png; do

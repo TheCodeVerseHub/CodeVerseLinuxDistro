@@ -6,7 +6,7 @@ xdata = pkgtype=pkg
 pkgver = 0.1.0-1
 pkgdesc = Sandboxed Lua-scriptable desktop icons for CVH Linux
 url = https://github.com/codeversehub/cvh-linux
-builddate = 1770218788
+builddate = 1770221578
 packager = Unknown Packager
 size = 3547327
 arch = x86_64
