@@ -1,0 +1,49 @@
+{
+  "themes": {
+    "gruvbox": {
+      "background": "#282828",
+      "foreground": "#fbf1c7",
+      "primary": "#85A598",
+      "secondary": "#A89A85",
+      "accent": "#fabd2f",
+      "surface": "#3c3836",
+      "panel": "#504945"
+    },
+    "dracula": {
+      "background": "#282a36",
+      "foreground": "#f8f8f2",
+      "primary": "#bd93f9",
+      "secondary": "#6272a4",
+      "accent": "#ff79c6",
+      "surface": "#44475a",
+      "panel": "#6272a4"
+    },
+    "nord": {
+      "background": "#2e3440",
+      "foreground": "#d8dee9",
+      "primary": "#88c0d0",
+      "secondary": "#5e81ac",
+      "accent": "#81a1c1",
+      "surface": "#3b4252",
+      "panel": "#434c5e"
+    },
+    "solarized-dark": {
+      "background": "#002b36",
+      "foreground": "#839496",
+      "primary": "#268bd2",
+      "secondary": "#586e75",
+      "accent": "#b58900",
+      "surface": "#073642",
+      "panel": "#586e75"
+    },
+    "monokai": {
+      "background": "#272822",
+      "foreground": "#f8f8f2",
+      "primary": "#66d9ef",
+      "secondary": "#75715e",
+      "accent": "#fd971f",
+      "surface": "#383830",
+      "panel": "#49483e"
+    }
+  }
+}
