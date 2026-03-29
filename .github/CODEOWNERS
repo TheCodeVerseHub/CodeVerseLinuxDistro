@@ -1,10 +1,15 @@
 # Default owners for the whole repository
-* @TheCodeVerseHub/core
+# NOTE: GitHub team handles are case-insensitive but must match the team slug.
+* @TheCodeVerseHub/codeverse-linux-distro @TheCodeVerseHub/distro-maintainers
 
-# Area ownership (keep these lightweight and practical)
-/docs/ @TheCodeVerseHub/core
-/scripts/ @TheCodeVerseHub/core
-/configs/ @TheCodeVerseHub/core
-/iso/ @TheCodeVerseHub/core
-/pkgbuild/ @TheCodeVerseHub/core
-/src/ @TheCodeVerseHub/core
+# Ownership by area
+/.github/ @TheCodeVerseHub/distro-maintainers
+/SECURITY.md @TheCodeVerseHub/distro-maintainers
+
+/docs/ @TheCodeVerseHub/documentation
+
+/scripts/ @TheCodeVerseHub/distro-maintainers
+/configs/ @TheCodeVerseHub/distro-maintainers
+/iso/ @TheCodeVerseHub/distro-maintainers
+/pkgbuild/ @TheCodeVerseHub/distro-maintainers
+/src/ @TheCodeVerseHub/distro-maintainers
