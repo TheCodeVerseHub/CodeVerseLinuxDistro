@@ -1,100 +1,45 @@
-# Contributing to CodeVerse Hub Projects
+# Contributing
 
-Thank you for your interest in contributing to CodeVerse Hub projects.  
-All repositories under the CodeVerse Hub organization are community-driven and open to contributions.
+Thanks for contributing to CodeVerse Linux (CVH Linux).
 
-This document explains how to get started and what is expected from contributors.
+## Setup (build environment)
 
----
+This project builds an ArchISO and is easiest to work on from an **Arch-based host**.
 
-## Who Can Contribute
+Required tools for ISO builds:
 
-- Beginners, intermediate, and advanced developers
-- Designers, writers, and documentation contributors
-- Anyone willing to collaborate respectfully
+- `archiso` (provides `mkarchiso`)
+- `squashfs-tools` (provides `mksquashfs`)
+- `libisoburn` (provides `xorriso`)
+- `grub` (provides `grub-mkrescue`)
 
-You do not need prior open-source experience.
+Install (Arch):
 
----
+- `sudo pacman -S archiso squashfs-tools libisoburn grub`
 
-## How to Start
+If you touch `src/` (Rust tools), install Rust via rustup.
 
-1. Choose a repository under the organization  
-   https://github.com/TheCodeVerseHub
-2. Read the repository README carefully
-3. Check existing issues
-4. Pick an issue or open a new one if needed
-5. Fork the repository
-6. Create a new branch for your work
-7. Make your changes
-8. Submit a pull request
+## Common tasks
 
----
+- Build packages: `./scripts/build-packages.sh`
+- Build ISO: `./scripts/build-iso.sh`
 
-## Development Workflow
+More detail: [docs/BUILD.md](docs/BUILD.md).
 
-- Fork the repository
-- Create a branch using a clear name  
-  Example: `fix-starboard-bug` or `add-hyprland-config`
-- Keep commits small and meaningful
-- Write clear commit messages
-- Test your changes before submitting
+## Testing changes
 
----
+Recommended: test in a VM first.
 
-## Pull Request Guidelines
+- Boot the ISO in QEMU/virt-manager
+- Smoke test:
+  - Boot to live environment
+  - Run `cvh-install` and complete an install on a disposable virtual disk
 
-- Clearly explain what your PR does
-- Link the related issue if applicable
-- Do not mix unrelated changes in one PR
-- Follow the existing code style
-- Be open to feedback and review comments
+VM walkthrough: [docs/TESTING.md](docs/TESTING.md).
 
-Low-quality or incomplete PRs may be closed.
+## Submitting a PR
 
----
-
-## Code Quality Expectations
-
-- Code should be readable and maintainable
-- Avoid unnecessary complexity
-- Follow project-specific style and structure
-- Document non-obvious logic
-- Do not commit generated files unless required
-
----
-
-## Issues and Discussions
-
-- Use issues for bugs, features, and tasks
-- Use discussions for questions and ideas
-- Search before opening a new issue
-
----
-
-## Behavior and Conduct
-
-- Be respectful and professional
-- No harassment, spam, or toxic behavior
-- Follow the Code of Conduct
-
-Violations may result in removal from the project.
-
----
-
-## Contributor Recognition
-
-Meaningful contributions will be:
-- Reviewed and merged when appropriate
-- Credited in the project
-- Eligible for the @Contributors role on the CodeVerse Hub Discord server
-
----
-
-## Questions
-
-If you are unsure about anything:
-- Ask in GitHub Discussions
-- Ask in the CodeVerse Hub Discord server
-
-We value collaboration and learning.
+1. Fork the repo and create a feature branch.
+2. Keep PRs focused (one logical change).
+3. Describe what changed and how it was tested.
+4. Submit a pull request using the PR template.

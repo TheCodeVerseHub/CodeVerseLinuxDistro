@@ -1,0 +1,62 @@
+name: Bug report
+description: Report something that is broken or unexpected
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug.
+
+  - type: input
+    id: version
+    attributes:
+      label: ISO/version
+      description: If known (e.g. iso_version from the boot screen, or the build date)
+      placeholder: "2026.03.29 (example)"
+    validations:
+      required: false
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      options:
+        - VM
+        - Real hardware
+    validations:
+      required: true
+
+  - type: textarea
+    id: what_happened
+    attributes:
+      label: What happened?
+      description: A clear and concise description of the problem
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Boot ISO
+        2. Run cvh-install
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / output
+      description: Paste relevant output (journalctl, installer output, etc.)
+      render: shell
+    validations:
+      required: false

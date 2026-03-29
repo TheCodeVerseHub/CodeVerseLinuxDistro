@@ -1,22 +1,23 @@
 # Security Policy
 
-## Supported Versions
+## Reporting a vulnerability
 
-Our only supported version is the current version that the bot/code is on; **all** other versions are currently unsupported!
+Please report security issues **privately**.
 
-## Reporting a Vulnerability
+Preferred:
 
-So... You have discovered a vulnerability within our code. What's next?
+- Use GitHub **Security Advisories** ("Report a vulnerability" in the Security tab).
 
-Next up is you have to make a report in the security tab, so that the development team can investigate your report. Reports are acknowledged within 72 hours, and a fix is output within a week (7 days) after acknowledgment IF the security vulnerability is true!
-We (TheCodeVerseHub) ask you to make sure to report true security vulnerabilities because they **NEED** to get fixed right away!
+If you cannot use private reporting:
 
-## Acknowledgment of the reported security vulnerability
+- Open a GitHub issue **without sensitive details** and ask for a private contact.
 
-We do acknowledge reports within 72 hours and start investigating after alerting the rest of the team about your reported security vulnerability.
+## What to include
 
-## What will we do if the report is true?
+- Affected component (e.g. installer, ISO build scripts, configs)
+- Reproduction steps or proof-of-concept
+- Impact assessment (what could an attacker do?)
 
-We will send back a message alerting the member that the report is true and is working on a fix right away. After a patch is sent out, we will update you and the Discord server about the security vulnerability that was patched.
+## Response expectations
 
-## We (TheCodeVerseHub) thank you in advance for reporting ANY security vulnerabilities that you do find within our code before they can be exploited!
+We aim to acknowledge reports within a reasonable time and will coordinate a fix and disclosure timeline with the reporter when appropriate.

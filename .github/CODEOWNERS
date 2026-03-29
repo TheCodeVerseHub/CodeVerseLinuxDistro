@@ -1,0 +1,10 @@
+# Default owners for the whole repository
+* @TheCodeVerseHub/core
+
+# Area ownership (keep these lightweight and practical)
+/docs/ @TheCodeVerseHub/core
+/scripts/ @TheCodeVerseHub/core
+/configs/ @TheCodeVerseHub/core
+/iso/ @TheCodeVerseHub/core
+/pkgbuild/ @TheCodeVerseHub/core
+/src/ @TheCodeVerseHub/core
