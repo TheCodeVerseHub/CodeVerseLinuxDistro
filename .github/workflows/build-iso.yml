@@ -1,0 +1,219 @@
+name: Build CVH Linux ISO
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (e.g., v2026.03.31). Auto-generated if empty."
+        required: false
+        default: ""
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: iso-build
+  cancel-in-progress: false
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache
+          sudo docker image prune --all --force
+          df -h /
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            VERSION="${GITHUB_REF#refs/tags/}"
+          else
+            VERSION="v$(date +%Y.%m.%d)"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Version: $VERSION"
+
+      - name: Build ISO in Arch Linux container
+        run: |
+          docker run --rm --privileged \
+            -v "${{ github.workspace }}:/build" \
+            -e TERM=xterm \
+            archlinux:latest \
+            bash -c '
+              set -euo pipefail
+
+              # ── 1. System setup ──────────────────────────────────────
+              echo "::group::Initialize pacman"
+              pacman-key --init
+              pacman-key --populate archlinux
+              pacman -Syu --noconfirm
+              echo "::endgroup::"
+
+              # ── 2. Install build dependencies ────────────────────────
+              echo "::group::Install dependencies"
+              pacman -S --noconfirm --needed \
+                archiso \
+                squashfs-tools \
+                libisoburn \
+                grub \
+                base-devel \
+                git \
+                rust \
+                lua \
+                wayland \
+                wayland-protocols
+              echo "::endgroup::"
+
+              # ── 3. Create non-root builder user ──────────────────────
+              # makepkg refuses to run as root; mkarchiso requires root.
+              # We run package builds as "builder" and ISO build as root.
+              useradd -m builder
+              echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+              chown -R builder:builder /build/src /build/pkgbuild /build/repo /build/configs
+
+              # ── 4. Reorder mirrors for CI speed ──────────────────────
+              # The ISO pacman.conf has Israeli mirrors first, which are slow
+              # from GitHub runners. Prepend the geo mirror for faster downloads.
+              # (The duplicate geo entry lower in the list is harmless.)
+              sed -i "/^\[core\]$/a Server = https://geo.mirror.pkgbuild.com/\$repo/os/\$arch" /build/iso/pacman.conf
+              sed -i "/^\[extra\]$/a Server = https://geo.mirror.pkgbuild.com/\$repo/os/\$arch" /build/iso/pacman.conf
+
+              # ── 5. Build packages (as non-root builder) ──────────────
+              echo "::group::Build packages"
+              cd /build
+              runuser -u builder -- bash scripts/build-packages.sh
+              echo "::endgroup::"
+
+              # ── 6. Build ISO (as root via build-iso.sh -n) ───────────
+              echo "::group::Build ISO"
+              cd /build
+              bash scripts/build-iso.sh -n
+              echo "::endgroup::"
+            '
+
+      - name: Generate checksum and identify ISO
+        id: iso
+        run: |
+          ISO_FILE=$(ls ${{ github.workspace }}/out/*.iso | head -1)
+          ISO_NAME=$(basename "$ISO_FILE")
+          sha256sum "$ISO_FILE" > "${ISO_FILE}.sha256"
+          SHA256=$(cut -d' ' -f1 < "${ISO_FILE}.sha256")
+          ISO_SIZE=$(stat --format=%s "$ISO_FILE")
+
+          echo "file=$ISO_FILE" >> "$GITHUB_OUTPUT"
+          echo "name=$ISO_NAME" >> "$GITHUB_OUTPUT"
+          echo "sha256=$SHA256" >> "$GITHUB_OUTPUT"
+          echo "size=$ISO_SIZE" >> "$GITHUB_OUTPUT"
+
+          echo "ISO: $ISO_NAME"
+          echo "SHA256: $SHA256"
+          echo "Size: $(du -h "$ISO_FILE" | cut -f1)"
+
+      - name: Compress ISO if over 2GB
+        id: compress
+        run: |
+          ISO_FILE="${{ steps.iso.outputs.file }}"
+          ISO_SIZE="${{ steps.iso.outputs.size }}"
+          LIMIT=$((2 * 1024 * 1024 * 1024))  # 2 GiB
+
+          if [ "$ISO_SIZE" -gt "$LIMIT" ]; then
+            echo "ISO exceeds 2GB ($ISO_SIZE bytes), compressing with zstd..."
+            zstd -T0 -10 "$ISO_FILE" -o "${ISO_FILE}.zst"
+            sha256sum "${ISO_FILE}.zst" > "${ISO_FILE}.zst.sha256"
+            ZST_SHA256=$(cut -d' ' -f1 < "${ISO_FILE}.zst.sha256")
+
+            echo "compressed=true" >> "$GITHUB_OUTPUT"
+            echo "zst_file=${ISO_FILE}.zst" >> "$GITHUB_OUTPUT"
+            echo "zst_name=$(basename "${ISO_FILE}.zst")" >> "$GITHUB_OUTPUT"
+            echo "zst_sha256=$ZST_SHA256" >> "$GITHUB_OUTPUT"
+            echo "Compressed: $(du -h "${ISO_FILE}.zst" | cut -f1)"
+          else
+            echo "compressed=false" >> "$GITHUB_OUTPUT"
+            echo "ISO is under 2GB, no compression needed."
+          fi
+
+      - name: Create GitHub Release (direct ISO)
+        if: steps.compress.outputs.compressed == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: CVH Linux ${{ steps.version.outputs.version }}
+          body: |
+            ## CVH Linux ${{ steps.version.outputs.version }}
+
+            ### Download
+            | File | SHA256 |
+            |------|--------|
+            | `${{ steps.iso.outputs.name }}` | `${{ steps.iso.outputs.sha256 }}` |
+
+            ### Verify
+            ```bash
+            sha256sum -c ${{ steps.iso.outputs.name }}.sha256
+            ```
+
+            ### Write to USB
+            ```bash
+            sudo dd if=${{ steps.iso.outputs.name }} of=/dev/sdX bs=4M status=progress oflag=sync
+            ```
+          files: |
+            ${{ steps.iso.outputs.file }}
+            ${{ steps.iso.outputs.file }}.sha256
+          draft: false
+          prerelease: false
+
+      - name: Create GitHub Release (compressed ISO)
+        if: steps.compress.outputs.compressed == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: CVH Linux ${{ steps.version.outputs.version }}
+          body: |
+            ## CVH Linux ${{ steps.version.outputs.version }}
+
+            > The ISO was compressed with `zstd` because it exceeds GitHub's 2GB asset limit.
+            > Decompress after download: `zstd -d ${{ steps.compress.outputs.zst_name }}`
+
+            ### Download
+            | File | SHA256 |
+            |------|--------|
+            | `${{ steps.compress.outputs.zst_name }}` | `${{ steps.compress.outputs.zst_sha256 }}` |
+
+            ### Verify & decompress
+            ```bash
+            sha256sum -c ${{ steps.compress.outputs.zst_name }}.sha256
+            zstd -d ${{ steps.compress.outputs.zst_name }}
+            ```
+
+            ### Uncompressed ISO checksum
+            | File | SHA256 |
+            |------|--------|
+            | `${{ steps.iso.outputs.name }}` | `${{ steps.iso.outputs.sha256 }}` |
+
+            ### Write to USB
+            ```bash
+            zstd -d ${{ steps.compress.outputs.zst_name }}
+            sudo dd if=${{ steps.iso.outputs.name }} of=/dev/sdX bs=4M status=progress oflag=sync
+            ```
+          files: |
+            ${{ steps.compress.outputs.zst_file }}
+            ${{ steps.compress.outputs.zst_file }}.sha256
+          draft: false
+          prerelease: false
