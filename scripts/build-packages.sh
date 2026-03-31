@@ -1,5 +1,5 @@
 #!/bin/bash
-# Build custom CVH Linux packages
+# Build custom CodeVerse Linux packages
 # Creates cvh-fuzzy, cvh-icons, and cvh-branding packages
 
 set -euo pipefail
@@ -163,11 +163,11 @@ create_fuzzy_pkgbuild() {
 
     # Use absolute path in PKGBUILD
     cat > "$PKGBUILD_DIR/cvh-fuzzy/PKGBUILD" <<EOF
-# Maintainer: CVH Linux Team
+# Maintainer: CodeVerse Linux Team
 pkgname=cvh-fuzzy
 pkgver=0.1.0
 pkgrel=1
-pkgdesc="Universal fuzzy finder for CVH Linux"
+pkgdesc="Universal fuzzy finder for CodeVerse Linux"
 arch=('x86_64')
 url="https://github.com/codeversehub/cvh-linux"
 license=('GPL3')
@@ -221,11 +221,11 @@ create_icons_pkgbuild() {
 
     # Use absolute path in PKGBUILD
     cat > "$PKGBUILD_DIR/cvh-icons/PKGBUILD" <<EOF
-# Maintainer: CVH Linux Team
+# Maintainer: CodeVerse Linux Team
 pkgname=cvh-icons
 pkgver=0.1.0
 pkgrel=1
-pkgdesc="Sandboxed Lua-scriptable desktop icons for CVH Linux"
+pkgdesc="Sandboxed Lua-scriptable desktop icons for CodeVerse Linux"
 arch=('x86_64')
 url="https://github.com/codeversehub/cvh-linux"
 license=('GPL3')
@@ -278,11 +278,11 @@ create_branding_pkgbuild() {
     mkdir -p "$PKGBUILD_DIR/cvh-branding"
 
     cat > "$PKGBUILD_DIR/cvh-branding/PKGBUILD" <<EOF
-# Maintainer: CVH Linux Team
+# Maintainer: CodeVerse Linux Team
 pkgname=cvh-branding
 pkgver=0.1.0
 pkgrel=1
-pkgdesc="CVH Linux branding, GRUB theme, and default configurations"
+pkgdesc="CodeVerse Linux branding, GRUB theme, and default configurations"
 arch=('any')
 url="https://github.com/codeversehub/cvh-linux"
 license=('GPL3')
@@ -294,7 +294,7 @@ _cvh_root="$PROJECT_ROOT"
 package() {
     # MOTD - welcome message
     install -Dm644 /dev/stdin "\$pkgdir/etc/motd" <<'MOTDEOF'
-Welcome to CVH Linux!
+Welcome to CodeVerse Linux!
 
 Quick Start:
   - Mod+Return    Open terminal
@@ -306,10 +306,10 @@ Quick Start:
 For more info: https://github.com/codeversehub/cvh-linux
 MOTDEOF
 
-    # CVH Linux info file
+    # CodeVerse Linux info file
     install -Dm644 /dev/stdin "\$pkgdir/usr/share/cvh-linux/info" <<'INFOEOF'
-NAME="CVH Linux"
-PRETTY_NAME="CVH Linux"
+NAME="CodeVerse Linux"
+PRETTY_NAME="CodeVerse Linux"
 ID=cvh
 VERSION_ID=0.1
 HOME_URL="https://codeversehub.dev"
@@ -466,7 +466,7 @@ update_repo_db() {
 main() {
     echo
     echo "╔════════════════════════════════════════════╗"
-    echo "║     CVH Linux Package Build Script         ║"
+    echo "║     CodeVerse Linux Package Build Script         ║"
     echo "╚════════════════════════════════════════════╝"
     echo
 

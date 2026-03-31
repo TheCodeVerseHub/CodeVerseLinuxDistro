@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# CVH Linux ISO Profile Definition
+# CodeVerse Linux ISO Profile Definition
 # Based on archiso profile format
 
 iso_name="cvh-linux"
 iso_label="CVH_LINUX_$(date +%Y%m)"
 iso_publisher="CodeVerse Hub <https://codeversehub.dev>"
-iso_application="CVH Linux Live/Install ISO"
+iso_application="CodeVerse Linux Live/Install ISO"
 iso_version="$(date +%Y.%m.%d)"
 install_dir="cvh"
 buildmodes=('iso')

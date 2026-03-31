@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for contributing to CodeVerse Linux (CVH Linux).
+Thanks for contributing to CodeVerse Linux (CodeVerse Linux).
 
 ## Setup (build environment)
 

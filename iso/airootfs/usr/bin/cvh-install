@@ -1,7 +1,7 @@
 #!/bin/bash
-# CVH Linux Installer
-# Modular installer for CVH Linux distribution
-# Run from live environment to install CVH Linux to disk
+# CodeVerse Linux Installer
+# Modular installer for CodeVerse Linux distribution
+# Run from live environment to install CodeVerse Linux to disk
 
 set -o pipefail
 

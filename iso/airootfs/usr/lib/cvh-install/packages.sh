@@ -1,5 +1,5 @@
 #!/bin/bash
-# CVH Linux Installer - Packages Module
+# CodeVerse Linux Installer - Packages Module
 # Package installation functions
 
 # Install base system
@@ -58,7 +58,7 @@ create_mirrorlist() {
     gum style --foreground 6 "  ● Creating package mirrorlist..."
     mkdir -p /mnt/etc/pacman.d
     cat > /mnt/etc/pacman.d/mirrorlist << 'EOF'
-# Arch Linux mirrorlist - CVH Linux
+# Arch Linux mirrorlist - CodeVerse Linux
 # Israeli mirrors
 Server = https://mirror.isoc.org.il/pub/archlinux/$repo/os/$arch
 Server = https://archlinux.mivzakim.net/$repo/os/$arch

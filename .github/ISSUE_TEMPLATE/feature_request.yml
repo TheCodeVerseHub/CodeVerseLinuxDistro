@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for helping improve CVH Linux.
+        Thanks for helping improve CodeVerse Linux.
 
   - type: textarea
     id: problem

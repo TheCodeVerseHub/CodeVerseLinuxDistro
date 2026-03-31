@@ -2,8 +2,8 @@
 name = "cvh-icons"
 version = "0.1.0"
 edition = "2021"
-authors = ["CVH Linux Team"]
-description = "Sandboxed Lua-scriptable file/folder icon system for CVH Linux"
+authors = ["CodeVerse Linux Team"]
+description = "Sandboxed Lua-scriptable file/folder icon system for CodeVerse Linux"
 license = "GPL-3.0"
 repository = "https://github.com/codeversehub/cvh-linux"
 

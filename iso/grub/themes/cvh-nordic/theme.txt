@@ -1,4 +1,4 @@
-# CVH Linux Nordic GRUB Theme
+# CodeVerse Linux Nordic GRUB Theme
 # Nord Color Palette
 
 # Desktop

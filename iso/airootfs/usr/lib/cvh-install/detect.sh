@@ -1,5 +1,5 @@
 #!/bin/bash
-# CVH Linux Installer - Detection Module
+# CodeVerse Linux Installer - Detection Module
 # System detection functions
 
 # Detect boot mode (UEFI or BIOS)

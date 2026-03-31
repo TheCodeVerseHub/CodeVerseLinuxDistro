@@ -1,4 +1,4 @@
-//! CVH Fuzzy - Universal fuzzy finder for CVH Linux
+//! CVH Fuzzy - Universal fuzzy finder for CodeVerse Linux
 //!
 //! A fast, all-in-one fuzzy finder for:
 //! - Files and directories
@@ -39,7 +39,7 @@ mod matcher;
 /// CVH Fuzzy - Universal fuzzy finder
 #[derive(Parser, Debug)]
 #[command(name = "cvh-fuzzy")]
-#[command(author = "CVH Linux Team")]
+#[command(author = "CodeVerse Linux Team")]
 #[command(version = "0.1.0")]
 #[command(about = "Universal fuzzy finder for files, apps, and commands")]
 struct Args {

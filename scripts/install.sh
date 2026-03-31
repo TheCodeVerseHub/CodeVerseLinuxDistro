@@ -1,6 +1,6 @@
 #!/bin/bash
-# CVH Linux Installer
-# Run from live environment to install CVH Linux to disk
+# CodeVerse Linux Installer
+# Run from live environment to install CodeVerse Linux to disk
 
 # Colors
 RED='\033[0;31m'
@@ -567,7 +567,7 @@ EOF
 # Configure Ly display manager
 mkdir -p /etc/ly
 cat > /etc/ly/config.ini << 'LY_EOF'
-# CVH Linux Ly Configuration
+# CodeVerse Linux Ly Configuration
 
 animation = 0
 hide_borders = 0
@@ -611,8 +611,8 @@ fi
 
 # Create os-release for proper branding (GRUB uses this)
 cat > /etc/os-release << EOF
-NAME="CVH Linux"
-PRETTY_NAME="CVH Linux"
+NAME="CodeVerse Linux"
+PRETTY_NAME="CodeVerse Linux"
 ID=cvh
 ID_LIKE=arch
 BUILD_ID=rolling
@@ -623,8 +623,8 @@ LOGO=cvh-logo
 EOF
 
 # Set GRUB distributor name
-sed -i 's/^GRUB_DISTRIBUTOR=.*/GRUB_DISTRIBUTOR="CVH Linux"/' /etc/default/grub 2>/dev/null || \
-    echo 'GRUB_DISTRIBUTOR="CVH Linux"' >> /etc/default/grub
+sed -i 's/^GRUB_DISTRIBUTOR=.*/GRUB_DISTRIBUTOR="CodeVerse Linux"/' /etc/default/grub 2>/dev/null || \
+    echo 'GRUB_DISTRIBUTOR="CodeVerse Linux"' >> /etc/default/grub
 
 # Ensure zsh is in /etc/shells
 echo "/usr/bin/zsh" >> /etc/shells
@@ -710,7 +710,7 @@ NIRI_EOF
 elif [[ "$COMPOSITOR" == "hyprland" ]]; then
     su - $USERNAME -c 'mkdir -p ~/.config/hypr'
     cat > /home/$USERNAME/.config/hypr/hyprland.conf << 'HYPR_EOF'
-# CVH Linux Hyprland Configuration
+# CodeVerse Linux Hyprland Configuration
 
 monitor=,preferred,auto,auto
 
@@ -1045,7 +1045,7 @@ CONFIGURE_SCRIPT
     echo -e "  ${BLUE}●${NC} Creating package mirrorlist..."
     mkdir -p /mnt/etc/pacman.d
     cat > /mnt/etc/pacman.d/mirrorlist << 'MIRRORLIST_EOF'
-# Arch Linux mirrorlist - CVH Linux
+# Arch Linux mirrorlist - CodeVerse Linux
 # Israeli mirrors
 Server = https://mirror.isoc.org.il/pub/archlinux/$repo/os/$arch
 Server = https://archlinux.mivzakim.net/$repo/os/$arch

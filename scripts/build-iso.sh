@@ -1,6 +1,6 @@
 #!/bin/bash
-# CVH Linux ISO Build Script
-# Builds a bootable live ISO of CVH Linux
+# CodeVerse Linux ISO Build Script
+# Builds a bootable live ISO of CodeVerse Linux
 
 set -euo pipefail
 
@@ -219,7 +219,7 @@ cleanup() {
 
 # Show usage
 usage() {
-    echo "CVH Linux ISO Build Script"
+    echo "CodeVerse Linux ISO Build Script"
     echo
     echo "Usage: $0 [OPTIONS]"
     echo
@@ -268,7 +268,7 @@ main() {
 
     echo
     echo "╔════════════════════════════════════════════╗"
-    echo "║       CVH Linux ISO Build Script           ║"
+    echo "║       CodeVerse Linux ISO Build Script           ║"
     echo "╚════════════════════════════════════════════╝"
     echo
 

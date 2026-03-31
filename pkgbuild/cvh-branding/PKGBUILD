@@ -1,8 +1,8 @@
-# Maintainer: CVH Linux Team
+# Maintainer: CodeVerse Linux Team
 pkgname=cvh-branding
 pkgver=0.1.0
 pkgrel=1
-pkgdesc="CVH Linux branding, GRUB theme, and default configurations"
+pkgdesc="CodeVerse Linux branding, GRUB theme, and default configurations"
 arch=('any')
 url="https://github.com/codeversehub/cvh-linux"
 license=('GPL3')
@@ -14,7 +14,7 @@ _cvh_root="/home/ofekb/codeversedistro/CodeVerseLinuxDistro"
 package() {
     # MOTD - welcome message
     install -Dm644 /dev/stdin "$pkgdir/etc/motd" <<'MOTDEOF'
-Welcome to CVH Linux!
+Welcome to CodeVerse Linux!
 
 Quick Start:
   - Mod+Return    Open terminal
@@ -26,10 +26,10 @@ Quick Start:
 For more info: https://github.com/codeversehub/cvh-linux
 MOTDEOF
 
-    # CVH Linux info file
+    # CodeVerse Linux info file
     install -Dm644 /dev/stdin "$pkgdir/usr/share/cvh-linux/info" <<'INFOEOF'
-NAME="CVH Linux"
-PRETTY_NAME="CVH Linux"
+NAME="CodeVerse Linux"
+PRETTY_NAME="CodeVerse Linux"
 ID=cvh
 VERSION_ID=0.1
 HOME_URL="https://codeversehub.dev"

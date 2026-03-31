@@ -1,5 +1,5 @@
 #!/bin/bash
-# CVH Linux Installer - Configure Module
+# CodeVerse Linux Installer - Configure Module
 # System configuration functions
 
 # Configure the installed system
@@ -110,7 +110,7 @@ EOF
 # Configure Ly display manager
 mkdir -p /etc/ly
 cat > /etc/ly/config.ini << 'LY_EOF'
-# CVH Linux Ly Configuration
+# CodeVerse Linux Ly Configuration
 
 # Disable the doom-fire background animation
 animate = false
@@ -165,8 +165,8 @@ fi
 
 # Create os-release for proper branding (GRUB uses this)
 cat > /etc/os-release << EOF
-NAME="CVH Linux"
-PRETTY_NAME="CVH Linux"
+NAME="CodeVerse Linux"
+PRETTY_NAME="CodeVerse Linux"
 ID=cvh
 ID_LIKE=arch
 BUILD_ID=rolling
@@ -177,8 +177,8 @@ LOGO=cvh-logo
 EOF
 
 # Set GRUB distributor name
-sed -i 's/^GRUB_DISTRIBUTOR=.*/GRUB_DISTRIBUTOR="CVH Linux"/' /etc/default/grub 2>/dev/null || \
-    echo 'GRUB_DISTRIBUTOR="CVH Linux"' >> /etc/default/grub
+sed -i 's/^GRUB_DISTRIBUTOR=.*/GRUB_DISTRIBUTOR="CodeVerse Linux"/' /etc/default/grub 2>/dev/null || \
+    echo 'GRUB_DISTRIBUTOR="CodeVerse Linux"' >> /etc/default/grub
 
 # Install Tela GRUB theme
 if [[ -d /usr/share/cvh-linux/grub-theme/tela ]]; then

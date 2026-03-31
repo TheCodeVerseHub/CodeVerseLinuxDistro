@@ -1,6 +1,6 @@
 # Architecture
 
-CVH Linux is assembled as an ArchISO profile with a small set of custom packages and synced user/system configuration.
+CodeVerse Linux is assembled as an ArchISO profile with a small set of custom packages and synced user/system configuration.
 
 ## Key directories
 

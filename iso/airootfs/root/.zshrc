@@ -1,4 +1,4 @@
-# CVH Linux Live Environment
+# CodeVerse Linux Live Environment
 
 # Basic prompt
 PS1='%F{cyan}[CVH Live]%f %F{green}%n@%m%f:%F{blue}%~%f %# '
@@ -10,8 +10,8 @@ alias install='cvh-install'
 
 # Welcome message
 echo ""
-echo "  Welcome to CVH Linux Live Environment!"
+echo "  Welcome to CodeVerse Linux Live Environment!"
 echo ""
-echo "  To install CVH Linux, run: cvh-install"
+echo "  To install CodeVerse Linux, run: cvh-install"
 echo "  To start Niri compositor, run: niri-session"
 echo ""

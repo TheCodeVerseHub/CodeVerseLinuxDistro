@@ -4,7 +4,7 @@ SCRIPTS_DIR="$HOME/.config/rofi/scripts"
 
 # // --  If no argument is provided, list the options -- //
 if [ -z "$@" ]; then
-    echo -en "\0prompt\x1fCVH Linux\n"
+    echo -en "\0prompt\x1fCodeVerse Linux\n"
     echo -en "󰣆  Applications\n"
     echo -en "󰖯  Windows\n"
     echo -en "󰸉  Wallpaper Selector\n"

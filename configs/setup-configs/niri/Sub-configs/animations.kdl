@@ -1,7 +1,7 @@
 // The wiki explains how to configure individual animations:
 // https://yalter.github.io/niri/Configuration:-Animations
 
-// Currently no animations are being added as of early release of codeverse linux.
+// Currently no animations are being added as of early release of CodeVerse Linux.
 // You can add your own by referring to the wiki link mentioned at the top.
 
 animations {

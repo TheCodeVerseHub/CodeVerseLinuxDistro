@@ -1,5 +1,5 @@
 #!/bin/bash
-# CVH Linux Installer - Configuration Module
+# CodeVerse Linux Installer - Configuration Module
 # Global variables and defaults
 
 # Progress tracking
@@ -18,7 +18,7 @@ export HOSTNAME="cvh-linux"
 export TIMEZONE="Asia/Jerusalem"
 export LOCALE="en_US.UTF-8"
 export KEYMAP="us"
-export COMPOSITOR="niri"  # CVH Linux uses niri compositor
+export COMPOSITOR="niri"  # CodeVerse Linux uses niri compositor
 
 # Package lists - synced with packages.x86_64
 # Note: archiso-specific packages (mkinitcpio-archiso, nbd, etc.) are excluded

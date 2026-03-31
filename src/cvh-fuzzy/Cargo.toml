@@ -2,8 +2,8 @@
 name = "cvh-fuzzy"
 version = "0.1.0"
 edition = "2021"
-authors = ["CVH Linux Team"]
-description = "Universal fuzzy finder for CVH Linux - files, apps, and commands"
+authors = ["CodeVerse Linux Team"]
+description = "Universal fuzzy finder for CodeVerse Linux - files, apps, and commands"
 license = "GPL-3.0"
 repository = "https://github.com/codeversehub/cvh-linux"
 

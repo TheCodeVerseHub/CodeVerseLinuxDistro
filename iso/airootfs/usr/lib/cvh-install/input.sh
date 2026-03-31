@@ -1,5 +1,5 @@
 #!/bin/bash
-# CVH Linux Installer - Input Module
+# CodeVerse Linux Installer - Input Module
 # User input and selection functions
 
 # Select keyboard layout
@@ -41,7 +41,7 @@ select_timezone() {
 select_compositor() {
     step_header "Compositor"
 
-    # CVH Linux uses niri as the default compositor
+    # CodeVerse Linux uses niri as the default compositor
     COMPOSITOR="niri"
 
     echo -e "\n  ${GREEN}✓${NC} Compositor: ${BOLD}$COMPOSITOR${NC} (scrollable-tiling)"

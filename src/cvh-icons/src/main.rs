@@ -20,7 +20,7 @@ mod wayland;
 /// CVH Icons - Desktop icon manager
 #[derive(Parser, Debug)]
 #[command(name = "cvh-icons")]
-#[command(author = "CVH Linux Team")]
+#[command(author = "CodeVerse Linux Team")]
 #[command(version = "0.1.0")]
 #[command(about = "Sandboxed Lua-scriptable desktop icons")]
 struct Args {

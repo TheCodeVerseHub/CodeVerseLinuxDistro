@@ -1,4 +1,4 @@
-# CVH Linux Package List
+# CodeVerse Linux Package List
 # Minimal lightweight Arch-based distro
 
 # =============================================================================
@@ -210,7 +210,7 @@ gcc
 pkgconf
 
 # =============================================================================
-# CVH LINUX CUSTOM PACKAGES (from cvh-linux repo)
+# CodeVerse Linux CUSTOM PACKAGES (from cvh-linux repo)
 # =============================================================================
 cvh-fuzzy
 cvh-icons

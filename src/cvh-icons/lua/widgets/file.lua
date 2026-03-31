@@ -5,7 +5,7 @@ Icon = {
     -- Metadata
     name = "file",
     version = "1.0",
-    author = "CVH Linux",
+    author = "CodeVerse Linux",
 
     -- Size
     width = 64,

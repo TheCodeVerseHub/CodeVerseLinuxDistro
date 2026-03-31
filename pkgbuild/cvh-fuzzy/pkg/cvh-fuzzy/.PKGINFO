@@ -4,7 +4,7 @@ pkgname = cvh-fuzzy
 pkgbase = cvh-fuzzy
 xdata = pkgtype=pkg
 pkgver = 0.1.0-1
-pkgdesc = Universal fuzzy finder for CVH Linux
+pkgdesc = Universal fuzzy finder for CodeVerse Linux
 url = https://github.com/codeversehub/cvh-linux
 builddate = 1770221576
 packager = Unknown Packager

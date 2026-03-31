@@ -1,5 +1,5 @@
 #!/bin/bash
-# CVH Linux Installer - UI Module
+# CodeVerse Linux Installer - UI Module
 
 # Logging functions using gum
 log_info() { gum log --level info "$1"; }
@@ -72,5 +72,5 @@ show_completion() {
         --foreground 82 --border-foreground 82 --border double \
         --align center --width 60 --margin "1 2" --padding "1 4" \
         "✓ Installation Complete!" "" \
-        "CVH Linux has been installed successfully."
+        "CodeVerse Linux has been installed successfully."
 }

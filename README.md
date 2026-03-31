@@ -1,6 +1,6 @@
-# CodeVerse Linux (CVH Linux)
+# CodeVerse Linux (CodeVerse Linux)
 
-CodeVerse Linux (CVH Linux) is a **community-driven, Arch-based Linux distribution** with a **Wayland-first** focus. The repository contains an **ArchISO profile** (`iso/`), build tooling (`scripts/`), curated configs (`configs/`), and a small set of custom packages (`src/`, `pkgbuild/`, `repo/`).
+CodeVerse Linux (CodeVerse Linux) is a **community-driven, Arch-based Linux distribution** with a **Wayland-first** focus. The repository contains an **ArchISO profile** (`iso/`), build tooling (`scripts/`), curated configs (`configs/`), and a small set of custom packages (`src/`, `pkgbuild/`, `repo/`).
 
 ## Target
 

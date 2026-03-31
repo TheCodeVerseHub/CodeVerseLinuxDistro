@@ -1,5 +1,5 @@
 #!/bin/bash
-# CVH Linux Installer - Disk Module
+# CodeVerse Linux Installer - Disk Module
 # Disk partitioning and formatting functions
 
 # Partition the disk

@@ -1,8 +1,8 @@
-# Maintainer: CVH Linux Team
+# Maintainer: CodeVerse Linux Team
 pkgname=cvh-icons
 pkgver=0.1.0
 pkgrel=1
-pkgdesc="Sandboxed Lua-scriptable desktop icons for CVH Linux"
+pkgdesc="Sandboxed Lua-scriptable desktop icons for CodeVerse Linux"
 arch=('x86_64')
 url="https://github.com/codeversehub/cvh-linux"
 license=('GPL3')

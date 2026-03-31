@@ -4,7 +4,7 @@ pkgname = cvh-icons
 pkgbase = cvh-icons
 xdata = pkgtype=pkg
 pkgver = 0.1.0-1
-pkgdesc = Sandboxed Lua-scriptable desktop icons for CVH Linux
+pkgdesc = Sandboxed Lua-scriptable desktop icons for CodeVerse Linux
 url = https://github.com/codeversehub/cvh-linux
 builddate = 1770221578
 packager = Unknown Packager

@@ -5,7 +5,7 @@ Icon = {
     -- Metadata
     name = "folder",
     version = "1.0",
-    author = "CVH Linux",
+    author = "CodeVerse Linux",
 
     -- Size (set by daemon based on config)
     width = 64,

@@ -1,4 +1,4 @@
-# CVH Linux Zsh Configuration
+# CodeVerse Linux Zsh Configuration
 
 # Path to Oh My Zsh installation
 export ZSH="$HOME/.oh-my-zsh"
@@ -99,7 +99,7 @@ alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
 
-# CVH Linux aliases
+# CodeVerse Linux aliases
 alias ff='cvh-fuzzy'
 alias ffa='cvh-fuzzy --mode apps'
 alias fff='cvh-fuzzy --mode files'

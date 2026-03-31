@@ -1,5 +1,5 @@
 #!/bin/bash
-# CVH Linux Installer - Finalize Module
+# CodeVerse Linux Installer - Finalize Module
 # Password setting, cleanup, and reboot
 
 # Set passwords
