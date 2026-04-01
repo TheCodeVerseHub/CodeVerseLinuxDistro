@@ -1,6 +1,10 @@
 #!/bin/bash
-# CVH Linux ISO Build Script
-# Builds a bootable live ISO of CVH Linux
+# CodeVerse Linux ISO Build Script
+# Builds a bootable live ISO of CodeVerse Linux
+#
+# USAGE: ./build-iso.sh [OPTIONS]
+#
+# Run './build-iso.sh --help' for more detailed information.
 
 set -euo pipefail
 
@@ -22,6 +26,32 @@ log_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
 log_success() { echo -e "${GREEN}[OK]${NC} $1"; }
 log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
+
+# Show usage
+usage() {
+    echo "============================================="
+    echo " CodeVerse Linux ISO Build Script"
+    echo "============================================="
+    echo
+    echo "Description: Builds a bootable live ISO of CodeVerse Linux."
+    echo
+    echo "Usage: ./$(basename "$0") [OPTIONS]"
+    echo
+    echo "Options:"
+    echo "  -h, --help       Show this help message and exit"
+    echo "  -c, --clean      Clean build directory before building"
+    echo "  -p, --packages   Only build custom packages, skip ISO creation"
+    echo "  -n, --no-pkg     Skip building custom packages"
+    echo
+    echo "Environment variables:"
+    echo "  WORK_DIR         Build work directory (default: \$PROJECT_ROOT/.build)"
+    echo
+    echo "Examples:"
+    echo "  ./$(basename "$0")              # Standard build"
+    echo "  ./$(basename "$0") --clean      # Clean previous builds and build"
+    echo "  ./$(basename "$0") --no-pkg     # Build ISO without recompiling packages"
+    echo
+}
 
 # Check dependencies
 check_dependencies() {
@@ -167,7 +197,7 @@ prepare_profile() {
         log_warn "Setup configs not found at $setup_src"
     fi
 
-    # Copy built packages (CVH + AUR) to ISO for offline installation
+    # Copy built packages (CodeVerse Linux + AUR) to ISO for offline installation
     local repo_src="$PROJECT_ROOT/repo/x86_64"
     local repo_dest="$WORK_DIR/profile/airootfs/opt/cvh-repo"
 
@@ -217,29 +247,13 @@ cleanup() {
     log_success "Cleanup complete"
 }
 
-# Show usage
-usage() {
-    echo "CVH Linux ISO Build Script"
-    echo
-    echo "Usage: $0 [OPTIONS]"
-    echo
-    echo "Options:"
-    echo "  -h, --help       Show this help message"
-    echo "  -c, --clean      Clean build directory before building"
-    echo "  -p, --packages   Only build custom packages"
-    echo "  -n, --no-pkg     Skip building custom packages"
-    echo
-    echo "Environment variables:"
-    echo "  WORK_DIR         Build work directory (default: \$PROJECT_ROOT/.build)"
-    echo
-}
-
 # Main
 main() {
     local clean=false
     local packages_only=false
     local skip_packages=false
 
+    # Parse arguments
     while [[ $# -gt 0 ]]; do
         case $1 in
             -h|--help)
@@ -260,7 +274,7 @@ main() {
                 ;;
             *)
                 log_error "Unknown option: $1"
-                usage
+                echo "Run '$0 --help' for usage information."
                 exit 1
                 ;;
         esac
@@ -268,7 +282,7 @@ main() {
 
     echo
     echo "╔════════════════════════════════════════════╗"
-    echo "║       CVH Linux ISO Build Script           ║"
+    echo "║      CodeVerse Linux ISO Build Script      ║"
     echo "╚════════════════════════════════════════════╝"
     echo
 
@@ -296,8 +310,9 @@ main() {
     log_success "Build complete!"
     echo
     echo "To test the ISO with QEMU:"
-    echo "  qemu-system-x86_64 -enable-kvm -m 4G -cdrom $OUT_DIR/cvh-linux-*.iso"
+    echo "  qemu-system-x86_64 -enable-kvm -m 4G -cdrom $OUT_DIR/codeverse-linux-*.iso"
     echo
 }
 
+# Call main with all arguments
 main "$@"
