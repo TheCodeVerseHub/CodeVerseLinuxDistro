@@ -1,6 +1,10 @@
 #!/bin/bash
-# Build custom CVH Linux packages
-# Creates cvh-fuzzy, cvh-icons, and cvh-branding packages
+# Build custom CodeVerse Linux packages
+# Creates codeverse-fuzzy, codeverse-icons, and codeverse-branding packages
+#
+# USAGE: ./build-packages.sh [OPTIONS]
+#
+# Run './build-packages.sh --help' for more detailed information.
 
 set -euo pipefail
 
@@ -22,6 +26,25 @@ log_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
 log_success() { echo -e "${GREEN}[OK]${NC} $1"; }
 log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
+
+# Show usage
+usage() {
+    echo "============================================="
+    echo " CodeVerse Linux Package Build Script"
+    echo "============================================="
+    echo
+    echo "Description: Builds custom packages (fuzzy, icons, branding)"
+    echo "             and AUR dependencies for CodeVerse Linux."
+    echo
+    echo "Usage: ./$(basename "$0") [OPTIONS]"
+    echo
+    echo "Options:"
+    echo "  -h, --help       Show this help message and exit"
+    echo
+    echo "Examples:"
+    echo "  ./$(basename "$0")       # Build all required packages"
+    echo
+}
 
 # Check for Rust
 check_rust() {
@@ -163,11 +186,11 @@ create_fuzzy_pkgbuild() {
 
     # Use absolute path in PKGBUILD
     cat > "$PKGBUILD_DIR/cvh-fuzzy/PKGBUILD" <<EOF
-# Maintainer: CVH Linux Team
+# Maintainer: CodeVerse Linux Team
 pkgname=cvh-fuzzy
 pkgver=0.1.0
 pkgrel=1
-pkgdesc="Universal fuzzy finder for CVH Linux"
+pkgdesc="Universal fuzzy finder for CodeVerse Linux"
 arch=('x86_64')
 url="https://github.com/codeversehub/cvh-linux"
 license=('GPL3')
@@ -188,7 +211,7 @@ package() {
 
     # Install shell integration
     install -Dm644 /dev/stdin "\$pkgdir/usr/share/cvh-fuzzy/shell/zsh.zsh" <<'ZSHEOF'
-# CVH Fuzzy Zsh Integration
+# CodeVerse Linux Fuzzy Zsh Integration
 if command -v cvh-fuzzy &> /dev/null; then
     cvh-fuzzy-file-widget() {
         local selected=\$(cvh-fuzzy --mode files)
@@ -221,11 +244,11 @@ create_icons_pkgbuild() {
 
     # Use absolute path in PKGBUILD
     cat > "$PKGBUILD_DIR/cvh-icons/PKGBUILD" <<EOF
-# Maintainer: CVH Linux Team
+# Maintainer: CodeVerse Linux Team
 pkgname=cvh-icons
 pkgver=0.1.0
 pkgrel=1
-pkgdesc="Sandboxed Lua-scriptable desktop icons for CVH Linux"
+pkgdesc="Sandboxed Lua-scriptable desktop icons for CodeVerse Linux"
 arch=('x86_64')
 url="https://github.com/codeversehub/cvh-linux"
 license=('GPL3')
@@ -250,7 +273,7 @@ package() {
 
     # Install default config
     install -Dm644 /dev/stdin "\$pkgdir/etc/cvh-icons/config.toml" <<'CONFEOF'
-# CVH Icons Configuration
+# CodeVerse Linux Icons Configuration
 icon_size = 64
 grid_spacing = 20
 font_size = 12.0
@@ -278,11 +301,11 @@ create_branding_pkgbuild() {
     mkdir -p "$PKGBUILD_DIR/cvh-branding"
 
     cat > "$PKGBUILD_DIR/cvh-branding/PKGBUILD" <<EOF
-# Maintainer: CVH Linux Team
+# Maintainer: CodeVerse Linux Team
 pkgname=cvh-branding
 pkgver=0.1.0
 pkgrel=1
-pkgdesc="CVH Linux branding, GRUB theme, and default configurations"
+pkgdesc="CodeVerse Linux branding, GRUB theme, and default configurations"
 arch=('any')
 url="https://github.com/codeversehub/cvh-linux"
 license=('GPL3')
@@ -294,7 +317,7 @@ _cvh_root="$PROJECT_ROOT"
 package() {
     # MOTD - welcome message
     install -Dm644 /dev/stdin "\$pkgdir/etc/motd" <<'MOTDEOF'
-Welcome to CVH Linux!
+Welcome to CodeVerse Linux!
 
 Quick Start:
   - Mod+Return    Open terminal
@@ -306,10 +329,10 @@ Quick Start:
 For more info: https://github.com/codeversehub/cvh-linux
 MOTDEOF
 
-    # CVH Linux info file
+    # CodeVerse Linux info file
     install -Dm644 /dev/stdin "\$pkgdir/usr/share/cvh-linux/info" <<'INFOEOF'
-NAME="CVH Linux"
-PRETTY_NAME="CVH Linux"
+NAME="CodeVerse Linux"
+PRETTY_NAME="CodeVerse Linux"
 ID=cvh
 VERSION_ID=0.1
 HOME_URL="https://codeversehub.dev"
@@ -464,9 +487,24 @@ update_repo_db() {
 
 # Main
 main() {
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -h|--help)
+                usage
+                exit 0
+                ;;
+            *)
+                log_error "Unknown option: $1"
+                echo "Run '$0 --help' for usage information."
+                exit 1
+                ;;
+        esac
+    done
+
     echo
     echo "╔════════════════════════════════════════════╗"
-    echo "║     CVH Linux Package Build Script         ║"
+    echo "║    CodeVerse Linux Package Build Script    ║"
     echo "╚════════════════════════════════════════════╝"
     echo
 
@@ -498,4 +536,5 @@ main() {
     echo
 }
 
+# Call main with all arguments
 main "$@"
