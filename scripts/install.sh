@@ -104,6 +104,21 @@ parse_args() {
                     echo -e "  Run ${CYAN}sudo bash install.sh --help${NC} for usage."
                     exit 1
                 fi
+                # Block partitions ,only allow whole disks
+                if [[ "$2" =~ [0-9]$ ]] && [[ -n "$(lsblk -dno PKNAME "$2" 2>/dev/null)" ]]; then
+                    echo -e "${RED}[ERROR]${NC} '$2' appears to be a partition, not a whole disk."
+                    echo -e "  Please specify the parent disk instead (e.g. /dev/sda, /dev/nvme0n1)."
+                    echo -e "  Available disks :-"
+                    lsblk -dno NAME,SIZE,MODEL | grep -vE "^(loop|sr|rom|fd|zram)" | \
+                        awk '{printf "    /dev/%-10s %s\n", $1, $2}'
+                    exit 1
+                fi
+                # Block selecting the live boot disk
+                if is_live_boot_disk "$2"; then
+                    echo -e "${RED}[ERROR]${NC} '$2' is the live boot medium! You cannot install to it."
+                    echo -e "-Select a different disk."
+                    exit 1
+                fi
                 DISK="$2"
                 shift 2
                 ;;
@@ -272,6 +287,50 @@ show_overall_progress() {
     echo -ne "${NC}${DIM}"
     for ((i=0; i<empty; i++)); do echo -n "░"; done
     echo -e "${NC} ${BOLD}${percent}%${NC}"
+}
+
+# Detect if a disk is the live boot medium 
+# Returns 0, if the disk should be excluded, 1
+
+is_live_boot_disk() {
+    local dev="$1"
+    local dev_basename
+    dev_basename=$(basename "$dev")
+
+    # Check if any partition on this disk is mounted as the live filesystem
+    if findmnt -n -o SOURCE /run/archiso/bootmnt 2>/dev/null | grep -q "$dev_basename"; then
+        return 0
+    fi
+
+    # Check if the disk holds the archiso label
+    if lsblk -no LABEL "$dev" 2>/dev/null | grep -qiE "(archiso|cvh|codeverse)"; then
+        return 0
+    fi
+
+    # Check if any partition on this disk is used by the live overlay
+    local disk_parts
+    disk_parts=$(lsblk -lno NAME "$dev" 2>/dev/null | tail -n +2)
+    for part in $disk_parts; do
+        if findmnt -n -o SOURCE / 2>/dev/null | grep -q "$part"; then
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+# list of installable disks
+get_installable_disks() {
+    local disks_raw
+    disks_raw=$(lsblk -dno NAME | grep -vE "^(loop|sr|rom|fd|zram)")
+
+    local result=()
+    for d in $disks_raw; do
+        if ! is_live_boot_disk "/dev/$d"; then
+            result+=("$d")
+        fi
+    done
+    echo "${result[@]}"
 }
 
 # Check if running as root
@@ -445,10 +504,20 @@ select_compositor() {
 select_disk() {
     step_header "Disk Selection"
 
-    # If disk was pre-set via --disk, confirm and skip interactive selection
+    # If disk was pre-set via --disk, show full details and confirm
     if [[ -n "$DISK" ]]; then
-        echo -e "  ${YELLOW}⚠${NC}  Pre-selected disk: ${BOLD}$DISK${NC}"
-        echo -e "  ${RED}    ALL DATA WILL BE DESTROYED!${NC}"
+        local pre_size pre_model
+        pre_size=$(lsblk -dno SIZE "$DISK" 2>/dev/null | xargs)
+        pre_model=$(lsblk -dno MODEL "$DISK" 2>/dev/null | xargs)
+        echo -e "  ${YELLOW}┌──────────────────────────────────────────────┐${NC}"
+        echo -e "  ${YELLOW}│${NC}  ${RED}${BOLD}⚠  WARNING: DESTRUCTIVE OPERATION${NC}             ${YELLOW}│${NC}"
+        echo -e "  ${YELLOW}├──────────────────────────────────────────────┤${NC}"
+        echo -e "  ${YELLOW}│${NC}  Disk:   ${BOLD}$DISK${NC}"
+        echo -e "  ${YELLOW}│${NC}  Size:   ${CYAN}${pre_size:-unknown}${NC}"
+        echo -e "  ${YELLOW}│${NC}  Model:  ${pre_model:-unknown}"
+        echo -e "  ${YELLOW}│${NC}"
+        echo -e "  ${YELLOW}│${NC}  ${RED}ALL DATA ON THIS DISK WILL BE PERMANENTLY ERASED!${NC}"
+        echo -e "  ${YELLOW}└──────────────────────────────────────────────┘${NC}"
         echo
         read -r -p "  Type 'yes' to confirm: " confirm
         if [[ "$confirm" != "yes" ]]; then
@@ -459,40 +528,73 @@ select_disk() {
         return
     fi
 
-    echo "  Available disks:"
-    echo
-    # Filter and display disks with nice formatting
-    local i=1
-    while IFS= read -r line; do
-        local name=$(echo "$line" | awk '{print $1}')
-        local size=$(echo "$line" | awk '{print $2}')
-        local model=$(echo "$line" | awk '{$1=$2=""; print $0}' | xargs)
-        printf "    ${BOLD}%d)${NC} /dev/%-8s ${CYAN}%8s${NC}  %s\n" "$i" "$name" "$size" "$model"
-        ((i++))
-    done < <(lsblk -dno NAME,SIZE,MODEL | grep -vE "^(loop|sr|rom|fd|zram)")
-    echo
-
-    # Get list of disks
-    local disks=($(lsblk -dno NAME | grep -vE "^(loop|sr|rom|fd|zram)"))
+    # list of installable disks
+    local disks
+    read -ra disks <<< "$(get_installable_disks)"
 
     if [[ ${#disks[@]} -eq 0 ]]; then
         log_error "No suitable disks found!"
+        echo -e "  ${YELLOW}All detected disks are either the live boot medium or unsupported.${NC}"
         exit 1
     fi
 
-    read -r -p "  Enter disk number: " disk_num
+    # Interactive selection with retry (max 3 attempts)
+    local disk_num
+    local max_attempts=3
+    local attempt=0
+    while true; do
+        ((attempt++))
+        if [[ $attempt -gt $max_attempts ]]; then
+            log_error "Too many invalid attempts ($max_attempts). Aborting."
+            exit 1
+        fi
 
-    if [[ ! "$disk_num" =~ ^[0-9]+$ ]] || [[ $disk_num -lt 1 ]] || [[ $disk_num -gt ${#disks[@]} ]]; then
-        log_error "Invalid selection! Please enter a number between 1 and ${#disks[@]}."
-        echo -e "  Run ${CYAN}sudo bash install.sh --help${NC} for usage."
-        exit 1
-    fi
+        echo "  Available disks:"
+        echo
+        local i=1
+        for d in "${disks[@]}"; do
+            local size model
+            size=$(lsblk -dno SIZE "/dev/$d" 2>/dev/null | xargs)
+            model=$(lsblk -dno MODEL "/dev/$d" 2>/dev/null | xargs)
+            printf "    ${BOLD}%d)${NC} /dev/%-8s ${CYAN}%8s${NC}  %s\n" "$i" "$d" "${size:-??}" "${model:-}"
+            ((i++))
+        done
+        echo
+
+        read -r -p "  Enter disk number [1-${#disks[@]}]: " disk_num
+
+        # Validate input
+        if [[ ! "$disk_num" =~ ^[0-9]+$ ]]; then
+            log_warn "Please enter a number. (Attempt $attempt/$max_attempts)"
+            echo
+            continue
+        fi
+        if [[ $disk_num -lt 1 ]] || [[ $disk_num -gt ${#disks[@]} ]]; then
+            log_warn "Invalid selection. Enter a number between 1 and ${#disks[@]}. (Attempt $attempt/$max_attempts)"
+            echo
+            continue
+        fi
+
+        # Valid selection
+        break
+    done
 
     DISK="/dev/${disks[$((disk_num-1))]}"
 
+    # Show whole confirmation with disk info
+    local sel_size sel_model
+    sel_size=$(lsblk -dno SIZE "$DISK" 2>/dev/null | xargs)
+    sel_model=$(lsblk -dno MODEL "$DISK" 2>/dev/null | xargs)
     echo
-    echo -e "  ${YELLOW}⚠${NC}  Selected: ${BOLD}$DISK${NC}"
-    echo -e "  ${RED}    ALL DATA WILL BE DESTROYED!${NC}"
+    echo -e "  ${YELLOW}┌──────────────────────────────────────────────┐${NC}"
+    echo -e "  ${YELLOW}│${NC}  ${RED}${BOLD}⚠  WARNING: DESTRUCTIVE OPERATION${NC}             ${YELLOW}│${NC}"
+    echo -e "  ${YELLOW}├──────────────────────────────────────────────┤${NC}"
+    echo -e "  ${YELLOW}│${NC}  Disk:   ${BOLD}$DISK${NC}"
+    echo -e "  ${YELLOW}│${NC}  Size:   ${CYAN}${sel_size:-unknown}${NC}"
+    echo -e "  ${YELLOW}│${NC}  Model:  ${sel_model:-unknown}"
+    echo -e "  ${YELLOW}│${NC}"
+    echo -e "  ${YELLOW}│${NC}  ${RED}ALL DATA ON THIS DISK WILL BE PERMANENTLY ERASED!${NC}"
+    echo -e "  ${YELLOW}└──────────────────────────────────────────────┘${NC}"
     echo
     read -r -p "  Type 'yes' to confirm: " confirm
     if [[ "$confirm" != "yes" ]]; then
@@ -511,13 +613,27 @@ set_hostname() {
     if [[ "$HOSTNAME" != "cvh-linux" ]]; then
         echo -e "  ${GREEN}✓${NC} Hostname pre-set: ${BOLD}$HOSTNAME${NC}"
     else
-        read -r -p "  Enter hostname [cvh-linux]: " input_hostname
-        HOSTNAME=${input_hostname:-cvh-linux}
+        local max_attempts=3
+        local attempt=0
+        while true; do
+            ((attempt++))
+            if [[ $attempt -gt $max_attempts ]]; then
+                log_warn "Too many invalid attempts. Using default: cvh-linux"
+                HOSTNAME="cvh-linux"
+                break
+            fi
 
-        if [[ ! "$HOSTNAME" =~ ^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$ ]]; then
-            log_warn "Invalid hostname '$HOSTNAME', using: cvh-linux"
-            HOSTNAME="cvh-linux"
-        fi
+            read -r -p "  Enter hostname [cvh-linux]: " input_hostname
+            HOSTNAME=${input_hostname:-cvh-linux}
+
+            if [[ "$HOSTNAME" =~ ^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$ ]]; then
+                break
+            fi
+            log_warn "Invalid hostname '$HOSTNAME'. (Attempt $attempt/$max_attempts)"
+            echo -e "  ${DIM}Hostnames may only contain letters, digits, and hyphens,${NC}"
+            echo -e "  ${DIM}and must not start or end with a hyphen.${NC}"
+            echo
+        done
 
         echo -e "  ${GREEN}✓${NC} Hostname: ${BOLD}$HOSTNAME${NC}"
     fi
@@ -533,13 +649,27 @@ create_user_config() {
         return
     fi
 
-    read -r -p "  Enter username [cvh]: " input_username
-    USERNAME=${input_username:-cvh}
+    local max_attempts=3
+    local attempt=0
+    while true; do
+        ((attempt++))
+        if [[ $attempt -gt $max_attempts ]]; then
+            log_warn "Too many invalid attempts. Using default: cvh"
+            USERNAME="cvh"
+            break
+        fi
 
-    if [[ ! "$USERNAME" =~ ^[a-z_][a-z0-9_-]*$ ]]; then
-        log_warn "Invalid username '$USERNAME', using: cvh"
-        USERNAME="cvh"
-    fi
+        read -r -p "  Enter username [cvh]: " input_username
+        USERNAME=${input_username:-cvh}
+
+        if [[ "$USERNAME" =~ ^[a-z_][a-z0-9_-]*$ ]]; then
+            break
+        fi
+        log_warn "Invalid username '$USERNAME'. (Attempt $attempt/$max_attempts)"
+        echo -e "  ${DIM}Usernames must start with a letter or underscore,${NC}"
+        echo -e "  ${DIM}and contain only lowercase letters, digits, - or _.${NC}"
+        echo
+    done
 
     echo -e "  ${GREEN}✓${NC} Username: ${BOLD}$USERNAME${NC}"
 }
