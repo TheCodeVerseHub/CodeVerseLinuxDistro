@@ -104,11 +104,10 @@ parse_args() {
                     echo -e "  Run ${CYAN}sudo bash install.sh --help${NC} for usage."
                     exit 1
                 fi
-                # Block partitions ,only allow whole disks
-                if [[ "$2" =~ [0-9]$ ]] && [[ -n "$(lsblk -dno PKNAME "$2" 2>/dev/null)" ]]; then
-                    echo -e "${RED}[ERROR]${NC} '$2' appears to be a partition, not a whole disk."
-                    echo -e "  Please specify the parent disk instead (e.g. /dev/sda, /dev/nvme0n1)."
-                    echo -e "  Available disks :-"
+                # Block partitions / virtual devices; only allow whole disks
+                if [[ "$(lsblk -ndo TYPE "$2" 2>/dev/null)" != "disk" ]]; then
+                    echo -e "${RED}[ERROR]${NC} '$2' must be a whole-disk device (e.g. /dev/sda, /dev/nvme0n1)."
+                    echo -e "  Available disks:"
                     lsblk -dno NAME,SIZE,MODEL | grep -vE "^(loop|sr|rom|fd|zram)" | \
                         awk '{printf "    /dev/%-10s %s\n", $1, $2}'
                     exit 1
