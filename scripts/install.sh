@@ -104,6 +104,19 @@ parse_args() {
                     echo -e "  Run ${CYAN}sudo bash install.sh --help${NC} for usage."
                     exit 1
                 fi
+                if [[ "$(lsblk -ndo TYPE "$2" 2>/dev/null)" != "disk" ]]; then
+                    echo -e "${RED}[ERROR]${NC} '$2' must be a whole-disk device (e.g. /dev/sda, /dev/nvme0n1)."
+                    echo -e "  Available disks:"
+                    lsblk -dno NAME,SIZE,MODEL | grep -vE "^(loop|sr|rom|fd|zram)" | \
+                        awk '{printf "    /dev/%-10s %s\n", $1, $2}'
+                    echo -e "  Run ${CYAN}sudo bash install.sh --help${NC} for usage."
+                    exit 1
+                fi
+                if is_live_boot_disk "$2"; then
+                    echo -e "${RED}[ERROR]${NC} '$2' is the live boot medium. You cannot install to it."
+                    echo -e "  Select a different disk."
+                    exit 1
+                fi
                 DISK="$2"
                 shift 2
                 ;;
@@ -272,6 +285,32 @@ show_overall_progress() {
     echo -ne "${NC}${DIM}"
     for ((i=0; i<empty; i++)); do echo -n "░"; done
     echo -e "${NC} ${BOLD}${percent}%${NC}"
+}
+
+# Detect whether a disk is the currently booted live medium
+is_live_boot_disk() {
+    local dev="$1"
+    local dev_basename
+    dev_basename=$(basename "$dev")
+
+    if findmnt -n -o SOURCE /run/archiso/bootmnt 2>/dev/null | grep -q "$dev_basename"; then
+        return 0
+    fi
+
+    if lsblk -no LABEL "$dev" 2>/dev/null | awk 'NF {print toupper($0)}' | grep -qE '^(ARCHISO|CVH_LINUX_|CODEVERSE_)'; then
+        return 0
+    fi
+
+    return 1
+}
+
+get_installable_disks() {
+    local disk
+    for disk in $(lsblk -dno NAME | grep -vE "^(loop|sr|rom|fd|zram)"); do
+        if ! is_live_boot_disk "/dev/$disk"; then
+            echo "$disk"
+        fi
+    done
 }
 
 # Check if running as root
@@ -459,26 +498,27 @@ select_disk() {
         return
     fi
 
-    echo "  Available disks:"
-    echo
-    # Filter and display disks with nice formatting
-    local i=1
-    while IFS= read -r line; do
-        local name=$(echo "$line" | awk '{print $1}')
-        local size=$(echo "$line" | awk '{print $2}')
-        local model=$(echo "$line" | awk '{$1=$2=""; print $0}' | xargs)
-        printf "    ${BOLD}%d)${NC} /dev/%-8s ${CYAN}%8s${NC}  %s\n" "$i" "$name" "$size" "$model"
-        ((i++))
-    done < <(lsblk -dno NAME,SIZE,MODEL | grep -vE "^(loop|sr|rom|fd|zram)")
-    echo
-
-    # Get list of disks
-    local disks=($(lsblk -dno NAME | grep -vE "^(loop|sr|rom|fd|zram)"))
+    local disks=()
+    while IFS= read -r disk; do
+        [[ -n "$disk" ]] && disks+=("$disk")
+    done < <(get_installable_disks)
 
     if [[ ${#disks[@]} -eq 0 ]]; then
         log_error "No suitable disks found!"
         exit 1
     fi
+
+    echo "  Available disks:"
+    echo
+    local i=1
+    for disk in "${disks[@]}"; do
+        local size model
+        size=$(lsblk -dno SIZE "/dev/$disk" 2>/dev/null | xargs)
+        model=$(lsblk -dno MODEL "/dev/$disk" 2>/dev/null | xargs)
+        printf "    ${BOLD}%d)${NC} /dev/%-8s ${CYAN}%8s${NC}  %s\n" "$i" "$disk" "${size:-??}" "$model"
+        ((i++))
+    done
+    echo
 
     read -r -p "  Enter disk number: " disk_num
 
