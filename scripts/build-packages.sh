@@ -1,6 +1,11 @@
 #!/bin/bash
 # Build custom CodeVerse Linux packages
 # Creates cvh-fuzzy, cvh-icons, and cvh-branding packages
+# Creates codeverse-fuzzy, codeverse-icons, and codeverse-branding packages
+#
+# USAGE: ./build-packages.sh [OPTIONS]
+#
+# Run './build-packages.sh --help' for more detailed information.
 
 set -euo pipefail
 
@@ -22,6 +27,25 @@ log_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
 log_success() { echo -e "${GREEN}[OK]${NC} $1"; }
 log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
+
+# Show usage
+usage() {
+    echo "============================================="
+    echo " CodeVerse Linux Package Build Script"
+    echo "============================================="
+    echo
+    echo "Description: Builds custom packages (fuzzy, icons, branding)"
+    echo "             and AUR dependencies for CodeVerse Linux."
+    echo
+    echo "Usage: ./$(basename "$0") [OPTIONS]"
+    echo
+    echo "Options:"
+    echo "  -h, --help       Show this help message and exit"
+    echo
+    echo "Examples:"
+    echo "  ./$(basename "$0")       # Build all required packages"
+    echo
+}
 
 # Check for Rust
 check_rust() {
@@ -188,7 +212,7 @@ package() {
 
     # Install shell integration
     install -Dm644 /dev/stdin "\$pkgdir/usr/share/cvh-fuzzy/shell/zsh.zsh" <<'ZSHEOF'
-# CVH Fuzzy Zsh Integration
+# CodeVerse Linux Fuzzy Zsh Integration
 if command -v cvh-fuzzy &> /dev/null; then
     cvh-fuzzy-file-widget() {
         local selected=\$(cvh-fuzzy --mode files)
@@ -250,7 +274,7 @@ package() {
 
     # Install default config
     install -Dm644 /dev/stdin "\$pkgdir/etc/cvh-icons/config.toml" <<'CONFEOF'
-# CVH Icons Configuration
+# CodeVerse Linux Icons Configuration
 icon_size = 64
 grid_spacing = 20
 font_size = 12.0
@@ -464,6 +488,21 @@ update_repo_db() {
 
 # Main
 main() {
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -h|--help)
+                usage
+                exit 0
+                ;;
+            *)
+                log_error "Unknown option: $1"
+                echo "Run '$0 --help' for usage information."
+                exit 1
+                ;;
+        esac
+    done
+
     echo
     echo "╔════════════════════════════════════════════╗"
     echo "║     CodeVerse Linux Package Build Script         ║"
@@ -498,4 +537,5 @@ main() {
     echo
 }
 
+# Call main with all arguments
 main "$@"

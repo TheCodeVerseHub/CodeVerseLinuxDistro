@@ -29,6 +29,168 @@ LOCALE="en_US.UTF-8"
 KEYMAP="us"
 COMPOSITOR=""  # Will be "niri" or "hyprland"
 
+# ─────────────────────────────────────────────────────────────────
+# Usage / Help
+# ─────────────────────────────────────────────────────────────────
+usage() {
+    echo -e "${BOLD}${CYAN}CVH Linux Installer${NC}"
+    echo
+    echo -e "${BOLD}USAGE:${NC}"
+    echo -e "  sudo bash install.sh [OPTIONS]"
+    echo
+    echo -e "${BOLD}OPTIONS:${NC}"
+    echo -e "  ${GREEN}-h, --help${NC}          Show this help message and exit"
+    echo -e "  ${GREEN}-v, --version${NC}       Show installer version and exit"
+    echo -e "  ${GREEN}--disk <device>${NC}     Pre-select target disk (e.g. /dev/sda)"
+    echo -e "  ${GREEN}--user <name>${NC}       Pre-set username (default: cvh)"
+    echo -e "  ${GREEN}--hostname <name>${NC}   Pre-set hostname (default: cvh-linux)"
+    echo -e "  ${GREEN}--timezone <tz>${NC}     Pre-set timezone (e.g. Europe/Istanbul)"
+    echo -e "  ${GREEN}--compositor <wm>${NC}   Pre-select compositor: ${CYAN}niri${NC} or ${CYAN}hyprland${NC}"
+    echo -e "  ${GREEN}--keymap <map>${NC}      Pre-set keyboard layout (e.g. us, de, fr)"
+    echo
+    echo -e "${BOLD}EXAMPLES:${NC}"
+    echo -e "  ${DIM}# Interactive install (recommended)${NC}"
+    echo -e "  sudo bash install.sh"
+    echo
+    echo -e "  ${DIM}# Pre-select disk and compositor${NC}"
+    echo -e "  sudo bash install.sh --disk /dev/sda --compositor niri"
+    echo
+    echo -e "  ${DIM}# Fully pre-configured install${NC}"
+    echo -e "  sudo bash install.sh --disk /dev/nvme0n1 --user john \\"
+    echo -e "    --hostname my-cvh --timezone Europe/Istanbul \\"
+    echo -e "    --compositor hyprland --keymap us"
+    echo
+    echo -e "${BOLD}NOTES:${NC}"
+    echo -e "  ${YELLOW}⚠${NC}  Must be run as ${BOLD}root${NC} from a live environment"
+    echo -e "  ${YELLOW}⚠${NC}  The selected disk will be ${RED}completely erased${NC}"
+    echo -e "  ${YELLOW}⚠${NC}  Network connection is required for package installation"
+    echo
+    echo -e "${BOLD}COMPOSITORS:${NC}"
+    echo -e "  ${CYAN}niri${NC}       Scrollable-tiling Wayland compositor"
+    echo -e "  ${CYAN}hyprland${NC}   Dynamic tiling Wayland compositor"
+    echo
+}
+
+show_version() {
+    echo -e "${BOLD}CVH Linux Installer${NC} v1.0.0"
+    echo -e "CodeVerse Hub Linux Distribution"
+}
+
+# ─────────────────────────────────────────────────────────────────
+# Argument Parsing
+# ─────────────────────────────────────────────────────────────────
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -h|--help)
+                usage
+                exit 0
+                ;;
+            -v|--version)
+                show_version
+                exit 0
+                ;;
+            --disk)
+                if [[ -z "${2:-}" ]]; then
+                    echo -e "${RED}[ERROR]${NC} --disk requires a device path (e.g. /dev/sda)"
+                    echo -e "  Run ${CYAN}sudo bash install.sh --help${NC} for usage."
+                    exit 1
+                fi
+                if [[ ! -b "$2" ]]; then
+                    echo -e "${RED}[ERROR]${NC} '$2' is not a valid block device."
+                    echo -e "  Available disks:"
+                    lsblk -dno NAME,SIZE,MODEL | grep -vE "^(loop|sr|rom|fd|zram)" | \
+                        awk '{printf "    /dev/%-10s %s\n", $1, $2}'
+                    echo -e "  Run ${CYAN}sudo bash install.sh --help${NC} for usage."
+                    exit 1
+                fi
+                DISK="$2"
+                shift 2
+                ;;
+            --user)
+                if [[ -z "${2:-}" ]]; then
+                    echo -e "${RED}[ERROR]${NC} --user requires a username."
+                    echo -e "  Run ${CYAN}sudo bash install.sh --help${NC} for usage."
+                    exit 1
+                fi
+                if [[ ! "$2" =~ ^[a-z_][a-z0-9_-]*$ ]]; then
+                    echo -e "${RED}[ERROR]${NC} Invalid username '${2}'."
+                    echo -e "  Usernames must start with a letter or underscore,"
+                    echo -e "  and contain only lowercase letters, digits, - or _."
+                    exit 1
+                fi
+                USERNAME="$2"
+                shift 2
+                ;;
+            --hostname)
+                if [[ -z "${2:-}" ]]; then
+                    echo -e "${RED}[ERROR]${NC} --hostname requires a name."
+                    echo -e "  Run ${CYAN}sudo bash install.sh --help${NC} for usage."
+                    exit 1
+                fi
+                if [[ ! "$2" =~ ^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$ ]]; then
+                    echo -e "${RED}[ERROR]${NC} Invalid hostname '${2}'."
+                    echo -e "  Hostnames may only contain letters, digits, and hyphens,"
+                    echo -e "  and must not start or end with a hyphen."
+                    exit 1
+                fi
+                HOSTNAME="$2"
+                shift 2
+                ;;
+            --timezone)
+                if [[ -z "${2:-}" ]]; then
+                    echo -e "${RED}[ERROR]${NC} --timezone requires a timezone string (e.g. Europe/Istanbul)."
+                    echo -e "  Run ${CYAN}sudo bash install.sh --help${NC} for usage."
+                    exit 1
+                fi
+                if [[ ! -f "/usr/share/zoneinfo/$2" ]]; then
+                    echo -e "${RED}[ERROR]${NC} Unknown timezone '${2}'."
+                    echo -e "  Valid examples: UTC, Europe/Istanbul, America/New_York, Asia/Jerusalem"
+                    echo -e "  Full list: ${CYAN}ls /usr/share/zoneinfo/${NC}"
+                    exit 1
+                fi
+                TIMEZONE="$2"
+                shift 2
+                ;;
+            --compositor)
+                if [[ -z "${2:-}" ]]; then
+                    echo -e "${RED}[ERROR]${NC} --compositor requires a value: ${CYAN}niri${NC} or ${CYAN}hyprland${NC}."
+                    echo -e "  Run ${CYAN}sudo bash install.sh --help${NC} for usage."
+                    exit 1
+                fi
+                if [[ "$2" != "niri" && "$2" != "hyprland" ]]; then
+                    echo -e "${RED}[ERROR]${NC} Unknown compositor '${2}'."
+                    echo -e "  Valid options: ${CYAN}niri${NC}, ${CYAN}hyprland${NC}"
+                    echo -e "  Run ${CYAN}sudo bash install.sh --help${NC} for usage."
+                    exit 1
+                fi
+                COMPOSITOR="$2"
+                shift 2
+                ;;
+            --keymap)
+                if [[ -z "${2:-}" ]]; then
+                    echo -e "${RED}[ERROR]${NC} --keymap requires a keymap name (e.g. us, de, fr)."
+                    echo -e "  Run ${CYAN}sudo bash install.sh --help${NC} for usage."
+                    exit 1
+                fi
+                KEYMAP="$2"
+                shift 2
+                ;;
+            -*)
+                echo -e "${RED}[ERROR]${NC} Unknown option: '$1'"
+                echo -e "  Run ${CYAN}sudo bash install.sh --help${NC} for usage."
+                exit 1
+                ;;
+            *)
+                echo -e "${RED}[ERROR]${NC} Unexpected argument: '$1'"
+                echo -e "  This installer does not take positional arguments."
+                echo -e "  Run ${CYAN}sudo bash install.sh --help${NC} for usage."
+                exit 1
+                ;;
+        esac
+    done
+}
+
 # Logging functions
 log_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
 log_success() { echo -e "${GREEN}[OK]${NC} $1"; }
@@ -115,7 +277,12 @@ show_overall_progress() {
 # Check if running as root
 check_root() {
     if [[ $EUID -ne 0 ]]; then
-        log_error "This installer must be run as root"
+        echo -e "${RED}[ERROR]${NC} This installer must be run as root."
+        echo
+        echo -e "  Please re-run with sudo:"
+        echo -e "    ${CYAN}sudo bash install.sh${NC}"
+        echo
+        echo -e "  Run ${CYAN}bash install.sh --help${NC} for full usage information."
         exit 1
     fi
 }
@@ -164,6 +331,14 @@ detect_boot_mode() {
 
 # Select keyboard layout
 select_keyboard() {
+    # Skip if already set via --keymap
+    if [[ -n "$KEYMAP" && "$KEYMAP" != "us" ]]; then
+        step_header "Keyboard Layout"
+        echo -e "  ${GREEN}✓${NC} Keyboard pre-set: ${BOLD}$KEYMAP${NC}"
+        loadkeys "$KEYMAP" 2>/dev/null || log_warn "Could not apply keymap '$KEYMAP' — continuing anyway."
+        return
+    fi
+
     step_header "Keyboard Layout"
 
     echo "  Available layouts:"
@@ -187,15 +362,22 @@ select_keyboard() {
         5) KEYMAP="es" ;;
         6) KEYMAP="il" ;;
         7) read -r -p "  Enter keymap name: " KEYMAP ;;
-        *) KEYMAP="us" ;;
+        *) log_warn "Invalid selection, defaulting to: us"; KEYMAP="us" ;;
     esac
 
-    loadkeys "$KEYMAP" 2>/dev/null || true
+    loadkeys "$KEYMAP" 2>/dev/null || log_warn "Could not apply keymap '$KEYMAP' — continuing anyway."
     echo -e "\n  ${GREEN}✓${NC} Keyboard: ${BOLD}$KEYMAP${NC}"
 }
 
 # Select timezone
 select_timezone() {
+    # Skip if already set via --timezone
+    if [[ "$TIMEZONE" != "Asia/Jerusalem" ]]; then
+        step_header "Timezone"
+        echo -e "  ${GREEN}✓${NC} Timezone pre-set: ${BOLD}$TIMEZONE${NC}"
+        return
+    fi
+
     step_header "Timezone"
 
     echo "  Common timezones:"
@@ -218,8 +400,14 @@ select_timezone() {
         4) TIMEZONE="America/Los_Angeles" ;;
         5) TIMEZONE="Europe/London" ;;
         6) TIMEZONE="Europe/Berlin" ;;
-        7) read -r -p "  Enter timezone (Region/City): " TIMEZONE ;;
-        *) TIMEZONE="Asia/Jerusalem" ;;
+        7)
+            read -r -p "  Enter timezone (Region/City): " TIMEZONE
+            if [[ ! -f "/usr/share/zoneinfo/$TIMEZONE" ]]; then
+                log_warn "Timezone '$TIMEZONE' not found. Defaulting to Asia/Jerusalem."
+                TIMEZONE="Asia/Jerusalem"
+            fi
+            ;;
+        *) log_warn "Invalid selection, defaulting to: Asia/Jerusalem"; TIMEZONE="Asia/Jerusalem" ;;
     esac
 
     echo -e "\n  ${GREEN}✓${NC} Timezone: ${BOLD}$TIMEZONE${NC}"
@@ -227,6 +415,13 @@ select_timezone() {
 
 # Select compositor
 select_compositor() {
+    # Skip if already set via --compositor
+    if [[ -n "$COMPOSITOR" ]]; then
+        step_header "Compositor Selection"
+        echo -e "  ${GREEN}✓${NC} Compositor pre-set: ${BOLD}$COMPOSITOR${NC}"
+        return
+    fi
+
     step_header "Compositor Selection"
 
     echo "  Available Wayland compositors:"
@@ -240,7 +435,7 @@ select_compositor() {
     case $comp_choice in
         1) COMPOSITOR="niri" ;;
         2) COMPOSITOR="hyprland" ;;
-        *) COMPOSITOR="niri" ;;
+        *) log_warn "Invalid selection, defaulting to: niri"; COMPOSITOR="niri" ;;
     esac
 
     echo -e "\n  ${GREEN}✓${NC} Compositor: ${BOLD}$COMPOSITOR${NC}"
@@ -249,6 +444,20 @@ select_compositor() {
 # Select disk for installation
 select_disk() {
     step_header "Disk Selection"
+
+    # If disk was pre-set via --disk, confirm and skip interactive selection
+    if [[ -n "$DISK" ]]; then
+        echo -e "  ${YELLOW}⚠${NC}  Pre-selected disk: ${BOLD}$DISK${NC}"
+        echo -e "  ${RED}    ALL DATA WILL BE DESTROYED!${NC}"
+        echo
+        read -r -p "  Type 'yes' to confirm: " confirm
+        if [[ "$confirm" != "yes" ]]; then
+            log_error "Installation cancelled by user."
+            exit 1
+        fi
+        echo -e "\n  ${GREEN}✓${NC} Disk: ${BOLD}$DISK${NC}"
+        return
+    fi
 
     echo "  Available disks:"
     echo
@@ -274,7 +483,8 @@ select_disk() {
     read -r -p "  Enter disk number: " disk_num
 
     if [[ ! "$disk_num" =~ ^[0-9]+$ ]] || [[ $disk_num -lt 1 ]] || [[ $disk_num -gt ${#disks[@]} ]]; then
-        log_error "Invalid selection!"
+        log_error "Invalid selection! Please enter a number between 1 and ${#disks[@]}."
+        echo -e "  Run ${CYAN}sudo bash install.sh --help${NC} for usage."
         exit 1
     fi
 
@@ -286,7 +496,7 @@ select_disk() {
     echo
     read -r -p "  Type 'yes' to confirm: " confirm
     if [[ "$confirm" != "yes" ]]; then
-        log_error "Installation cancelled"
+        log_error "Installation cancelled by user."
         exit 1
     fi
 
@@ -297,25 +507,37 @@ select_disk() {
 set_hostname() {
     step_header "System Configuration"
 
-    read -r -p "  Enter hostname [cvh-linux]: " input_hostname
-    HOSTNAME=${input_hostname:-cvh-linux}
+    # Skip if already set via --hostname
+    if [[ "$HOSTNAME" != "cvh-linux" ]]; then
+        echo -e "  ${GREEN}✓${NC} Hostname pre-set: ${BOLD}$HOSTNAME${NC}"
+    else
+        read -r -p "  Enter hostname [cvh-linux]: " input_hostname
+        HOSTNAME=${input_hostname:-cvh-linux}
 
-    if [[ ! "$HOSTNAME" =~ ^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$ ]]; then
-        log_warn "Invalid hostname, using: cvh-linux"
-        HOSTNAME="cvh-linux"
+        if [[ ! "$HOSTNAME" =~ ^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$ ]]; then
+            log_warn "Invalid hostname '$HOSTNAME', using: cvh-linux"
+            HOSTNAME="cvh-linux"
+        fi
+
+        echo -e "  ${GREEN}✓${NC} Hostname: ${BOLD}$HOSTNAME${NC}"
     fi
-
-    echo -e "  ${GREEN}✓${NC} Hostname: ${BOLD}$HOSTNAME${NC}"
 }
 
 # Create user account
 create_user_config() {
     echo
+
+    # Skip if already set via --user
+    if [[ "$USERNAME" != "cvh" ]]; then
+        echo -e "  ${GREEN}✓${NC} Username pre-set: ${BOLD}$USERNAME${NC}"
+        return
+    fi
+
     read -r -p "  Enter username [cvh]: " input_username
     USERNAME=${input_username:-cvh}
 
     if [[ ! "$USERNAME" =~ ^[a-z_][a-z0-9_-]*$ ]]; then
-        log_warn "Invalid username, using: cvh"
+        log_warn "Invalid username '$USERNAME', using: cvh"
         USERNAME="cvh"
     fi
 
@@ -417,7 +639,14 @@ install_base() {
 
         if ! ping -c 1 -W 5 archlinux.org &>/dev/null; then
             echo -e "  ${RED}✗${NC} No network connection"
-            echo "    Use 'nmtui' or 'nmcli' to configure network"
+            echo
+            echo -e "  ${YELLOW}To connect manually:${NC}"
+            echo -e "    ${CYAN}nmtui${NC}              — graphical network manager"
+            echo -e "    ${CYAN}nmcli device wifi list${NC} — list WiFi networks"
+            echo -e "    ${CYAN}nmcli device wifi connect <SSID> password <PW>${NC}"
+            echo
+            echo -e "  Re-run the installer after connecting:"
+            echo -e "    ${CYAN}sudo bash install.sh${NC}"
             exit 1
         fi
     fi
@@ -506,6 +735,13 @@ install_base() {
     else
         echo
         echo -e "  ${RED}✗${NC} Package installation failed!"
+        echo
+        echo -e "  ${YELLOW}Possible causes:${NC}"
+        echo -e "    • Network dropped during download"
+        echo -e "    • Pacman keyring issue — try: ${CYAN}pacman-key --refresh-keys${NC}"
+        echo -e "    • Disk full or mount error"
+        echo
+        echo -e "  Re-run after fixing: ${CYAN}sudo bash install.sh${NC}"
         exit 1
     fi
 }
@@ -893,7 +1129,7 @@ chown $USERNAME:$USERNAME /home/$USERNAME/.zshrc
 su - $USERNAME -c 'mkdir -p ~/.config/fastfetch'
 cat > /home/$USERNAME/.config/fastfetch/config.jsonc << 'FASTFETCH_EOF'
 {
-    "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+    "\$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
     "logo": {
         "type": "file",
         "source": "~/.config/fastfetch/ascii_art.txt",
@@ -1080,6 +1316,7 @@ PACMAN_REPOS_EOF
     # Verify script was created
     if [[ ! -f /mnt/root/configure.sh ]]; then
         echo -e "\n  ${RED}✗${NC} Failed to create configuration script!"
+        echo -e "  Check that /mnt is mounted correctly and has write access."
         exit 1
     fi
 
@@ -1168,8 +1405,13 @@ EOF
     reboot
 }
 
+# ─────────────────────────────────────────────────────────────────
 # Main installation flow
+# ─────────────────────────────────────────────────────────────────
 main() {
+    # Parse arguments FIRST (before root check, so --help works without sudo)
+    parse_args "$@"
+
     check_root
     show_welcome
     detect_boot_mode
