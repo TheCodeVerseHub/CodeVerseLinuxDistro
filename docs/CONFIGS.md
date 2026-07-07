@@ -1,6 +1,6 @@
 # 📁 Configuration Files Guide
 
-This document provides a simple explanation of the configuration files present in the `configs/` folder. These files help customize the appearance and behavior of the Linux environment.
+This document provides a simple explanation of the user configuration directories in `configs/setup-configs/`. These files help customize the appearance and behavior of the Linux environment.
 
 ---
 
